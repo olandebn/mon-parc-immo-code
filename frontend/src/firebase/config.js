@@ -8,9 +8,9 @@ import { getStorage } from 'firebase/storage'
 // Firebase Console > Paramètres du projet > Tes applications > SDK Firebase
 const firebaseConfig = {
   apiKey: "TON_API_KEY",
-  authDomain: "TON_AUTH_DOMAIN.firebaseapp.com",
-  projectId: "TON_PROJECT_ID",
-  storageBucket: "TON_PROJECT_ID.appspot.com",
+  authDomain: "mon-parc-immo.firebaseapp.com",
+  projectId: "mon-parc-immo",
+  storageBucket: "mon-parc-immo.appspot.com",
   messagingSenderId: "TON_MESSAGING_SENDER_ID",
   appId: "TON_APP_ID"
 }
