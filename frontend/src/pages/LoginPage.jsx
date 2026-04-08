@@ -129,16 +129,33 @@ export default function LoginPage() {
   const from = location.state?.from?.pathname || '/'
 
   const FIREBASE_ERRORS = {
-    'auth/user-not-found':     'Aucun compte trouvé avec cet email.',
-    'auth/wrong-password':     'Mot de passe incorrect.',
-    'auth/invalid-credential': 'Email ou mot de passe incorrect.',
-    'auth/email-already-in-use': 'Un compte existe déjà avec cet email.',
-    'auth/weak-password':      'Le mot de passe doit faire au moins 6 caractères.',
-    'auth/invalid-email':      'Adresse email invalide.',
-    'auth/too-many-requests':  'Trop de tentatives. Réessayez dans quelques minutes.',
+    'auth/user-not-found':           'Aucun compte trouvé avec cet email.',
+    'auth/wrong-password':           'Mot de passe incorrect.',
+    'auth/invalid-credential':       'Email ou mot de passe incorrect.',
+    'auth/email-already-in-use':     'Un compte existe déjà avec cet email.',
+    'auth/weak-password':            'Le mot de passe doit faire au moins 6 caractères.',
+    'auth/invalid-email':            'Adresse email invalide.',
+    'auth/too-many-requests':        'Trop de tentatives. Réessayez dans quelques minutes.',
+    'auth/network-request-failed':   'Pas de connexion réseau. Vérifiez votre internet.',
+    'auth/popup-closed-by-user':     'Connexion annulée.',
+    'auth/operation-not-allowed':    'Connexion par email non activée. Activez-la dans Firebase Console → Authentication → Sign-in methods.',
+    'auth/configuration-not-found':  'Configuration Firebase incorrecte. Vérifiez les clés dans .env.local.',
+    'auth/api-key-not-valid':        'Clé API Firebase invalide. Vérifiez VITE_FIREBASE_API_KEY dans .env.local.',
   }
 
-  const getErrorMessage = (code) => FIREBASE_ERRORS[code] || 'Une erreur est survenue. Réessayez.'
+  const getErrorMessage = (err) => {
+    console.error('[Auth error]', err?.code, err?.message, err?.response?.status)
+    // Erreur Firebase Auth (code = 'auth/...')
+    if (err?.code && FIREBASE_ERRORS[err.code]) return FIREBASE_ERRORS[err.code]
+    // Erreur HTTP backend
+    if (err?.response?.data?.message) return err.response.data.message
+    if (err?.response?.status === 500) return 'Erreur serveur. Réessayez dans un instant.'
+    if (err?.response?.status === 409) return 'Un compte existe déjà avec cet email.'
+    // Message brut Firebase sans mapping
+    if (err?.message?.includes('email-already-in-use')) return 'Un compte existe déjà avec cet email.'
+    if (err?.message?.includes('operation-not-allowed')) return FIREBASE_ERRORS['auth/operation-not-allowed']
+    return `Erreur : ${err?.code || err?.message || 'inconnue'}. Vérifiez la console (F12).`
+  }
 
   /* Connexion */
   const handleLogin = async (e) => {
@@ -149,7 +166,7 @@ export default function LoginPage() {
       await login(loginEmail, loginPassword)
       navigate(from, { replace: true })
     } catch (err) {
-      setError(getErrorMessage(err.code))
+      setError(getErrorMessage(err))
     } finally {
       setLoading(false)
     }
@@ -173,7 +190,7 @@ export default function LoginPage() {
       toast.success(`Bienvenue, ${firstName} ! Votre compte a été créé.`)
       navigate('/', { replace: true })
     } catch (err) {
-      setError(getErrorMessage(err.code))
+      setError(getErrorMessage(err))
     } finally {
       setLoading(false)
     }
@@ -191,7 +208,7 @@ export default function LoginPage() {
       setResetSent(true)
       toast.success('Email de réinitialisation envoyé !')
     } catch (err) {
-      setError(getErrorMessage(err.code))
+      setError(getErrorMessage(err))
     } finally {
       setLoading(false)
     }

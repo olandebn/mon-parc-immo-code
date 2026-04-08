@@ -17,6 +17,7 @@ import InstructionsPage from './pages/InstructionsPage'
 
 // Pages admin
 import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminProperties from './pages/admin/AdminProperties'
 import AdminBookings from './pages/admin/AdminBookings'
 import AdminPricing from './pages/admin/AdminPricing'
 import AdminDocuments from './pages/admin/AdminDocuments'
@@ -67,6 +68,11 @@ function App() {
           <Route path="/admin" element={
             <ProtectedRoute requireAdmin>
               <AdminDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/biens" element={
+            <ProtectedRoute requireAdmin>
+              <AdminProperties />
             </ProtectedRoute>
           } />
           <Route path="/admin/reservations" element={

@@ -59,19 +59,23 @@ export function AuthProvider({ children }) {
 
   // Inscription publique
   const register = async (email, password, firstName, lastName) => {
-    // 1. Créer le compte Firebase
+    // 1. Créer le compte Firebase Auth
     const userCredential = await createUserWithEmailAndPassword(auth, email, password)
 
     // 2. Obtenir le token immédiatement
     const token = await userCredential.user.getIdToken()
-
-    // 3. Créer le profil dans Firestore via le backend
-    await api.post('/auth/register', { firstName, lastName, email }, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-
-    // 4. Mettre à jour le header pour les appels suivants
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`
+
+    // 3. Tenter de créer le profil Firestore via le backend
+    //    Si le backend est indisponible, on continue quand même —
+    //    le profil sera créé lors du prochain appel à /users/me
+    try {
+      await api.post('/auth/register', { firstName, lastName, email }, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+    } catch (backendErr) {
+      console.warn('Création de profil backend échouée (sera retenté) :', backendErr?.response?.status, backendErr?.message)
+    }
 
     return userCredential
   }

@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import { statsService, reservationService, messageService } from '../../services/api'
 import {
   Calendar, Users, Euro, BarChart2, FileText,
-  MessageSquare, Settings, TrendingUp, Home
+  MessageSquare, Settings, TrendingUp, Home, Building2
 } from 'lucide-react'
 
 const AdminNavLink = ({ to, icon: Icon, label, badge }) => (
@@ -117,6 +117,7 @@ export default function AdminDashboard() {
 
         {/* Navigation principale */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+          <AdminNavLink to="/admin/biens" icon={Building2} label="Mes biens" />
           <AdminNavLink
             to="/admin/reservations"
             icon={Calendar}
@@ -131,10 +132,9 @@ export default function AdminDashboard() {
           />
           <AdminNavLink to="/admin/tarifs" icon={Euro} label="Tarifs & Saisons" />
           <AdminNavLink to="/admin/documents" icon={FileText} label="Documents" />
-          <AdminNavLink to="/admin/statistiques" icon={BarChart2} label="Statistiques" />
-          <AdminNavLink to="/admin/depenses" icon={TrendingUp} label="Dépenses" />
+          <AdminNavLink to="/admin/statistiques" icon={BarChart2} label="Statistiques & Revenus" />
+          <AdminNavLink to="/admin/depenses" icon={TrendingUp} label="Dépenses & Charges" />
           <AdminNavLink to="/admin/utilisateurs" icon={Users} label="Utilisateurs" />
-          <AdminNavLink to="/admin/property" icon={Settings} label="Configurer le bien" />
         </div>
 
         {/* Dernières réservations */}

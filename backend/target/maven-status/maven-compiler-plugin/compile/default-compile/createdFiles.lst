@@ -26,7 +26,6 @@ com\monparcimmo\controller\ExpenseController.class
 com\monparcimmo\model\Room.class
 com\monparcimmo\security\FirebaseAuthFilter.class
 com\monparcimmo\config\SecurityConfig.class
-com\monparcimmo\controller\PropertyController$PhotoUrlRequest.class
 com\monparcimmo\service\ReviewService.class
 com\monparcimmo\model\Review.class
 com\monparcimmo\service\StatisticsService.class

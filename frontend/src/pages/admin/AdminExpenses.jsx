@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { expenseService } from '../../services/api'
 import { Plus, Edit2, Trash2, Filter } from 'lucide-react'
 import { toast } from 'react-toastify'
+import PropertySelector from '../../components/admin/PropertySelector'
 
 const CATEGORIES = {
   RENOVATION: 'Travaux / Rénovation',
@@ -28,9 +29,10 @@ const emptyForm = {
 
 export default function AdminExpenses() {
   const currentYear = new Date().getFullYear()
+  const [propertyId, setPropertyId] = useState(null)
   const [expenses, setExpenses] = useState([])
   const [summary, setSummary] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [year, setYear] = useState(currentYear)
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState(null)
@@ -38,14 +40,14 @@ export default function AdminExpenses() {
   const [saving, setSaving] = useState(false)
   const [filterCat, setFilterCat] = useState('ALL')
 
-  useEffect(() => { loadData() }, [year])
+  useEffect(() => { if (propertyId) loadData() }, [year, propertyId])
 
   const loadData = async () => {
     setLoading(true)
     try {
       const [expRes, sumRes] = await Promise.all([
-        expenseService.getExpensesByYear(year),
-        expenseService.getExpenseSummary(year),
+        expenseService.getExpensesByYear(propertyId, year),
+        expenseService.getExpenseSummary(propertyId, year),
       ])
       setExpenses(expRes.data)
       setSummary(sumRes.data)
@@ -56,12 +58,12 @@ export default function AdminExpenses() {
     e.preventDefault()
     setSaving(true)
     try {
-      const data = { ...form, amount: parseFloat(form.amount) || 0, year }
+      const data = { ...form, amount: parseFloat(form.amount) || 0, year, propertyId }
       if (editingId) {
         await expenseService.updateExpense(editingId, data)
         toast.success('Dépense mise à jour')
       } else {
-        await expenseService.addExpense(data)
+        await expenseService.addExpense(propertyId, data)
         toast.success('Dépense ajoutée')
       }
       setShowForm(false)
@@ -110,24 +112,32 @@ export default function AdminExpenses() {
             <Link to="/admin" className="text-gray-400 hover:text-gray-600">← Dashboard</Link>
             <h1 className="text-xl font-bold text-gray-900">Dépenses</h1>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center flex-wrap">
+            <PropertySelector value={propertyId} onChange={(id) => setPropertyId(id)} required />
             <select value={year} onChange={(e) => setYear(parseInt(e.target.value))}
               className="input-field w-auto text-sm">
               {[currentYear, currentYear-1, currentYear-2].map(y =>
                 <option key={y} value={y}>{y}</option>
               )}
             </select>
-            <button
-              onClick={() => { setForm({ ...emptyForm, year }); setEditingId(null); setShowForm(true) }}
-              className="btn-primary flex items-center gap-2 text-sm"
-            >
-              <Plus className="w-4 h-4" /> Ajouter
-            </button>
+            {propertyId && (
+              <button
+                onClick={() => { setForm({ ...emptyForm, year }); setEditingId(null); setShowForm(true) }}
+                className="btn-primary flex items-center gap-2 text-sm"
+              >
+                <Plus className="w-4 h-4" /> Ajouter
+              </button>
+            )}
           </div>
         </div>
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-6">
+        {!propertyId && (
+          <div className="text-center py-20 text-gray-400">
+            <p className="text-lg font-medium">Sélectionnez un bien pour gérer ses dépenses</p>
+          </div>
+        )}
         {/* Résumé */}
         {summary && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

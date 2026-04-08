@@ -2,30 +2,32 @@ import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { statsService } from '../../services/api'
 import { TrendingUp, TrendingDown, Users, Calendar, Euro, Percent } from 'lucide-react'
+import PropertySelector from '../../components/admin/PropertySelector'
 
 const MONTHS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc']
 
 export default function AdminStats() {
   const currentYear = new Date().getFullYear()
+  const [propertyId, setPropertyId] = useState(null)
   const [year, setYear] = useState(currentYear)
   const [yearly, setYearly] = useState(null)
   const [monthly, setMonthly] = useState(null)
   const [financial, setFinancial] = useState(null)
   const [occupancy, setOccupancy] = useState(null)
   const [clientsHistory, setClientsHistory] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
 
-  useEffect(() => { loadStats() }, [year])
+  useEffect(() => { if (propertyId) loadStats() }, [year, propertyId])
 
   const loadStats = async () => {
     setLoading(true)
     try {
       const [yearlyRes, monthlyRes, financialRes, occupancyRes, clientsRes] = await Promise.all([
-        statsService.getYearlyStats(year),
-        statsService.getBookingsPerMonth(year),
-        statsService.getFinancialSummary(year),
-        statsService.getOccupancyRate(year),
-        statsService.getClientsHistory(),
+        statsService.getYearlyStats(propertyId, year),
+        statsService.getBookingsPerMonth(propertyId, year),
+        statsService.getFinancialSummary(propertyId, year),
+        statsService.getOccupancyRate(propertyId, year),
+        statsService.getClientsHistory(propertyId),
       ])
       setYearly(yearlyRes.data)
       setMonthly(monthlyRes.data)
@@ -49,20 +51,31 @@ export default function AdminStats() {
             <Link to="/admin" className="text-gray-400 hover:text-gray-600">← Dashboard</Link>
             <h1 className="text-xl font-bold text-gray-900">Statistiques</h1>
           </div>
-          <select
-            value={year}
-            onChange={(e) => setYear(parseInt(e.target.value))}
-            className="input-field w-auto"
-          >
-            {[currentYear, currentYear - 1, currentYear - 2].map(y => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
+          <div className="flex items-center gap-3">
+            <PropertySelector
+              value={propertyId}
+              onChange={(id) => setPropertyId(id)}
+              required
+            />
+            <select
+              value={year}
+              onChange={(e) => setYear(parseInt(e.target.value))}
+              className="input-field w-auto"
+            >
+              {[currentYear, currentYear - 1, currentYear - 2].map(y => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </header>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {loading ? (
+        {!propertyId ? (
+          <div className="text-center py-20 text-gray-400">
+            <p className="text-lg font-medium">Sélectionnez un bien pour afficher ses statistiques</p>
+          </div>
+        ) : loading ? (
           <div className="flex justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
           </div>
@@ -229,7 +242,7 @@ export default function AdminStats() {
             )}
           </div>
         )}
-      </main>
+        </main>
     </div>
   )
 }
