@@ -7,6 +7,7 @@ import java.util.List;
 @Data
 public class PropertyDocument {
     private String id;
+    private String propertyId;      // ID du bien concerné
     private String title;           // ex: "Règlement intérieur", "Guide d'arrivée"
     private String type;            // HOUSE_RULES, ARRIVAL_INSTRUCTIONS, DEPARTURE_INSTRUCTIONS, OTHER
     private String fileUrl;         // URL Firebase Storage

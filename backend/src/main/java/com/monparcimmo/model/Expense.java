@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 @Data
 public class Expense {
     private String id;
+    private String propertyId;      // ID du bien concerné
     private String category;        // RENOVATION, FURNITURE, TAXES, WATER_ELECTRICITY,
                                     // SYNDICATE_CHARGES, INSURANCE, OTHER
     private String label;           // Description de la dépense

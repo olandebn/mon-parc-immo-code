@@ -5,6 +5,7 @@ import ProtectedRoute from './components/common/ProtectedRoute'
 
 // Pages publiques
 import HomePage from './pages/HomePage'
+import PropertyPage from './pages/PropertyPage'
 import LoginPage from './pages/LoginPage'
 import InvitationPage from './pages/InvitationPage'
 
@@ -31,10 +32,16 @@ function App() {
         <Routes>
           {/* Routes publiques */}
           <Route path="/" element={<HomePage />} />
+          <Route path="/biens/:propertyId" element={<PropertyPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/invitation/:token" element={<InvitationPage />} />
 
           {/* Routes client authentifié */}
+          <Route path="/biens/:propertyId/reserver" element={
+            <ProtectedRoute>
+              <BookingPage />
+            </ProtectedRoute>
+          } />
           <Route path="/booking" element={
             <ProtectedRoute>
               <BookingPage />

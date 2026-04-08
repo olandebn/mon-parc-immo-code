@@ -1,13 +1,21 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { Home, Calendar, FileText, LogOut, Menu, X, Settings, BarChart2 } from 'lucide-react'
+import { Home, LogOut, Menu, X, Settings } from 'lucide-react'
 
-export default function Navbar() {
+export default function Navbar({ dark = false }) {
   const { currentUser, userProfile, isAdmin, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    if (!dark) return
+    const onScroll = () => setScrolled(window.scrollY > 40)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [dark])
 
   const handleLogout = async () => {
     await logout()
@@ -16,122 +24,195 @@ export default function Navbar() {
 
   const isActive = (path) => location.pathname === path
 
+  /* ── Styles dynamiques selon le mode ── */
+  const navBg = dark
+    ? scrolled
+      ? 'rgba(4,5,15,0.92)'
+      : 'transparent'
+    : '#ffffff'
+
+  const navBorder = dark
+    ? scrolled ? '1px solid rgba(255,255,255,0.06)' : 'none'
+    : '1px solid #f1f5f9'
+
+  const navShadow = dark ? 'none' : '0 1px 3px rgba(0,0,0,0.06)'
+
+  const logoText  = dark ? '#f8fafc' : '#111827'
+  const linkColor = dark ? 'rgba(255,255,255,0.65)' : '#6b7280'
+  const linkHover = dark ? '#ffffff' : '#111827'
+  const activeColor = dark ? '#818cf8' : '#4f46e5'
+
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+    <nav
+      style={{
+        position: dark ? 'fixed' : 'sticky',
+        top: 0, left: 0, right: 0,
+        zIndex: 100,
+        background: navBg,
+        borderBottom: navBorder,
+        boxShadow: navShadow,
+        backdropFilter: dark ? 'blur(20px)' : 'none',
+        WebkitBackdropFilter: dark ? 'blur(20px)' : 'none',
+        transition: 'background 0.4s ease, border-color 0.4s ease',
+      }}
+    >
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64 }}>
+
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <Home className="w-5 h-5 text-white" />
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+            <div style={{
+              width: 34, height: 34,
+              borderRadius: 10,
+              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: dark ? '0 0 16px rgba(99,102,241,0.4)' : '0 2px 8px rgba(99,102,241,0.3)',
+            }}>
+              <Home style={{ width: 16, height: 16, color: '#fff' }} />
             </div>
-            <span className="text-xl font-bold text-gray-900">MonParcImmo</span>
+            <span style={{ fontSize: 17, fontWeight: 800, color: logoText, letterSpacing: '-0.02em' }}>
+              MonParcImmo
+            </span>
           </Link>
 
-          {/* Navigation desktop */}
-          <div className="hidden md:flex items-center gap-6">
-            <Link
-              to="/"
-              className={`text-sm font-medium transition-colors ${
-                isActive('/') ? 'text-blue-600' : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Accueil
-            </Link>
-
-            {currentUser && (
-              <>
-                <Link
-                  to="/booking"
-                  className={`text-sm font-medium transition-colors ${
-                    isActive('/booking') ? 'text-blue-600' : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  Réserver
-                </Link>
-                <Link
-                  to="/mes-reservations"
-                  className={`text-sm font-medium transition-colors ${
-                    isActive('/mes-reservations') ? 'text-blue-600' : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  Mes réservations
-                </Link>
-                <Link
-                  to="/instructions"
-                  className={`text-sm font-medium transition-colors ${
-                    isActive('/instructions') ? 'text-blue-600' : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  Guide
-                </Link>
-              </>
-            )}
-
+          {/* Nav links desktop */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 28 }} className="hidden-mobile">
+            {[
+              { to: '/', label: 'Accueil', always: true },
+              { to: '/mes-reservations', label: 'Mes réservations', auth: true },
+              { to: '/instructions', label: 'Guide', auth: true },
+            ].filter(l => l.always || (l.auth && currentUser)).map(l => (
+              <Link
+                key={l.to}
+                to={l.to}
+                style={{
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: isActive(l.to) ? activeColor : linkColor,
+                  textDecoration: 'none',
+                  transition: 'color 0.2s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.color = isActive(l.to) ? activeColor : linkHover}
+                onMouseLeave={e => e.currentTarget.style.color = isActive(l.to) ? activeColor : linkColor}
+              >
+                {l.label}
+              </Link>
+            ))}
             {isAdmin && (
               <Link
                 to="/admin"
-                className="flex items-center gap-1 text-sm font-medium text-purple-600 hover:text-purple-700"
+                style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 14, fontWeight: 500, color: '#a78bfa', textDecoration: 'none' }}
               >
-                <Settings className="w-4 h-4" />
-                Administration
+                <Settings style={{ width: 14, height: 14 }} />
+                Admin
               </Link>
             )}
           </div>
 
-          {/* Actions */}
-          <div className="hidden md:flex items-center gap-3">
+          {/* Actions desktop */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }} className="hidden-mobile">
             {currentUser ? (
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-gray-600">
+              <>
+                <span style={{ fontSize: 13, color: linkColor }}>
                   {userProfile?.firstName || currentUser.email}
                 </span>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center gap-1 text-sm text-gray-500 hover:text-red-600 transition-colors"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    fontSize: 13, fontWeight: 500, color: linkColor,
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    transition: 'color 0.2s',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
+                  onMouseLeave={e => e.currentTarget.style.color = linkColor}
                 >
-                  <LogOut className="w-4 h-4" />
+                  <LogOut style={{ width: 14, height: 14 }} />
                   Déconnexion
                 </button>
-              </div>
+              </>
             ) : (
-              <Link to="/login" className="btn-primary text-sm">
+              <Link
+                to="/login"
+                style={{
+                  fontSize: 14, fontWeight: 600,
+                  padding: '8px 20px',
+                  borderRadius: 10,
+                  textDecoration: 'none',
+                  background: dark
+                    ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
+                    : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                  color: '#fff',
+                  boxShadow: '0 0 20px rgba(99,102,241,0.3)',
+                  transition: 'box-shadow 0.2s, transform 0.2s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 0 32px rgba(99,102,241,0.5)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+                onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 0 20px rgba(99,102,241,0.3)'; e.currentTarget.style.transform = 'none' }}
+              >
                 Connexion
               </Link>
             )}
           </div>
 
-          {/* Bouton menu mobile */}
+          {/* Burger mobile */}
           <button
-            className="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100"
+            style={{ display: 'none', padding: 8, background: 'none', border: 'none', cursor: 'pointer', color: linkColor }}
+            className="show-mobile"
             onClick={() => setMenuOpen(!menuOpen)}
           >
-            {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {menuOpen ? <X style={{ width: 22, height: 22 }} /> : <Menu style={{ width: 22, height: 22 }} />}
           </button>
         </div>
       </div>
 
       {/* Menu mobile */}
       {menuOpen && (
-        <div className="md:hidden border-t border-gray-100 bg-white px-4 py-3 space-y-2">
-          <Link to="/" className="block py-2 text-sm text-gray-700" onClick={() => setMenuOpen(false)}>Accueil</Link>
-          {currentUser && (
-            <>
-              <Link to="/booking" className="block py-2 text-sm text-gray-700" onClick={() => setMenuOpen(false)}>Réserver</Link>
-              <Link to="/mes-reservations" className="block py-2 text-sm text-gray-700" onClick={() => setMenuOpen(false)}>Mes réservations</Link>
-              <Link to="/instructions" className="block py-2 text-sm text-gray-700" onClick={() => setMenuOpen(false)}>Guide</Link>
-            </>
-          )}
-          {isAdmin && (
-            <Link to="/admin" className="block py-2 text-sm text-purple-600 font-medium" onClick={() => setMenuOpen(false)}>Administration</Link>
-          )}
-          {currentUser ? (
-            <button onClick={handleLogout} className="block w-full text-left py-2 text-sm text-red-600">Déconnexion</button>
-          ) : (
-            <Link to="/login" className="block py-2 text-sm text-blue-600 font-medium" onClick={() => setMenuOpen(false)}>Connexion</Link>
-          )}
+        <div style={{
+          background: dark ? 'rgba(4,5,15,0.98)' : '#ffffff',
+          borderTop: dark ? '1px solid rgba(255,255,255,0.06)' : '1px solid #f1f5f9',
+          padding: '12px 24px 20px',
+        }}>
+          {[
+            { to: '/', label: 'Accueil' },
+            ...(currentUser ? [
+              { to: '/mes-reservations', label: 'Mes réservations' },
+              { to: '/instructions', label: 'Guide' },
+            ] : []),
+            ...(isAdmin ? [{ to: '/admin', label: 'Administration', special: true }] : []),
+          ].map(l => (
+            <Link key={l.to} to={l.to}
+              onClick={() => setMenuOpen(false)}
+              style={{ display: 'block', padding: '10px 0', fontSize: 15, fontWeight: 500,
+                       color: l.special ? '#a78bfa' : (dark ? 'rgba(255,255,255,0.7)' : '#374151'),
+                       textDecoration: 'none', borderBottom: `1px solid ${dark ? 'rgba(255,255,255,0.05)' : '#f3f4f6'}` }}>
+              {l.label}
+            </Link>
+          ))}
+          <div style={{ paddingTop: 12 }}>
+            {currentUser ? (
+              <button onClick={handleLogout}
+                style={{ fontSize: 14, color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer' }}>
+                Déconnexion
+              </button>
+            ) : (
+              <Link to="/login" onClick={() => setMenuOpen(false)}
+                style={{ fontSize: 14, fontWeight: 600, color: '#818cf8', textDecoration: 'none' }}>
+                Connexion
+              </Link>
+            )}
+          </div>
         </div>
       )}
+
+      <style>{`
+        @media (max-width: 768px) {
+          .hidden-mobile { display: none !important; }
+          .show-mobile { display: block !important; }
+        }
+        @media (min-width: 769px) {
+          .show-mobile { display: none !important; }
+        }
+      `}</style>
     </nav>
   )
 }

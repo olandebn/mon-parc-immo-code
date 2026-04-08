@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 @Data
 public class Reservation {
     private String id;
+    private String propertyId;      // ID du bien concerné
     private String clientUid;       // Firebase UID du client
     private String clientName;      // Prénom + Nom (dénormalisé)
     private String clientEmail;

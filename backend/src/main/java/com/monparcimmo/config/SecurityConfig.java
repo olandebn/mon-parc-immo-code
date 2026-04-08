@@ -26,13 +26,13 @@ public class SecurityConfig {
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Routes publiques
-                .requestMatchers("/api/property/**").permitAll()
+                // Routes publiques (sans token)
+                .requestMatchers("/api/properties/**").permitAll()
                 .requestMatchers("/api/reviews/public/**").permitAll()
                 .requestMatchers("/api/auth/invitation/**").permitAll()
                 // Routes admin uniquement
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                // Toutes les autres routes nécessitent une authentification
+                // Toutes les autres routes nécessitent une authentification Firebase
                 .anyRequest().authenticated()
             )
             .addFilterBefore(firebaseAuthFilter, UsernamePasswordAuthenticationFilter.class);

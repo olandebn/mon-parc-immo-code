@@ -6,6 +6,7 @@ import java.time.LocalDate;
 @Data
 public class PricingSeason {
     private String id;
+    private String propertyId;      // ID du bien concerné
     private String name;            // ex: "Haute saison été 2025", "Basse saison hiver"
     private String type;            // HIGH_SEASON, LOW_SEASON
     private LocalDate startDate;

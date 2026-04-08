@@ -26,9 +26,11 @@ public class ReservationService {
     @Autowired
     private UserService userService;
 
-    public List<Map<String, String>> getUnavailableDates() {
+    // Dates indisponibles pour un bien donné
+    public List<Map<String, String>> getUnavailableDates(String propertyId) {
         try {
             List<QueryDocumentSnapshot> docs = firestore.collection(COLLECTION)
+                    .whereEqualTo("propertyId", propertyId)
                     .whereIn("status", Arrays.asList("CONFIRMED", "PENDING"))
                     .get().get().getDocuments();
 
@@ -50,8 +52,7 @@ public class ReservationService {
 
     public Reservation createReservation(Reservation reservation, String clientUid) {
         try {
-            // Vérifier la disponibilité
-            if (!isAvailable(reservation.getCheckInDate(), reservation.getCheckOutDate())) {
+            if (!isAvailable(reservation.getPropertyId(), reservation.getCheckInDate(), reservation.getCheckOutDate())) {
                 throw new RuntimeException("Ces dates ne sont pas disponibles");
             }
 
@@ -68,9 +69,7 @@ public class ReservationService {
             reservation.setId(ref.getId());
             ref.set(reservation).get();
 
-            // Envoyer un email de notification à l'admin
             emailService.sendNewReservationNotification(reservation);
-            // Envoyer un email de confirmation au client
             emailService.sendReservationConfirmationToClient(reservation);
 
             return reservation;
@@ -89,7 +88,7 @@ public class ReservationService {
                     .map(doc -> doc.toObject(Reservation.class))
                     .collect(Collectors.toList());
         } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException("Erreur lors de la récupération des réservations", e);
+            throw new RuntimeException("Erreur", e);
         }
     }
 
@@ -98,13 +97,12 @@ public class ReservationService {
             DocumentSnapshot doc = firestore.collection(COLLECTION).document(id).get().get();
             if (!doc.exists()) throw new RuntimeException("Réservation introuvable");
             Reservation reservation = doc.toObject(Reservation.class);
-            // Vérifier que c'est bien la réservation du client (sauf admin)
             if (!reservation.getClientUid().equals(clientUid)) {
                 throw new RuntimeException("Accès non autorisé");
             }
             return reservation;
         } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException("Erreur lors de la récupération de la réservation", e);
+            throw new RuntimeException("Erreur", e);
         }
     }
 
@@ -117,7 +115,22 @@ public class ReservationService {
                     .map(doc -> doc.toObject(Reservation.class))
                     .collect(Collectors.toList());
         } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException("Erreur lors de la récupération des réservations", e);
+            throw new RuntimeException("Erreur", e);
+        }
+    }
+
+    // Réservations d'un bien spécifique (admin)
+    public List<Reservation> getReservationsByProperty(String propertyId) {
+        try {
+            return firestore.collection(COLLECTION)
+                    .whereEqualTo("propertyId", propertyId)
+                    .orderBy("checkInDate", Query.Direction.DESCENDING)
+                    .get().get().getDocuments()
+                    .stream()
+                    .map(doc -> doc.toObject(Reservation.class))
+                    .collect(Collectors.toList());
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException("Erreur", e);
         }
     }
 
@@ -129,7 +142,7 @@ public class ReservationService {
             emailService.sendReservationStatusUpdate(reservation, "CONFIRMED");
             return reservation;
         } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException("Erreur lors de la confirmation", e);
+            throw new RuntimeException("Erreur", e);
         }
     }
 
@@ -144,7 +157,7 @@ public class ReservationService {
             reservation.setStatus("CANCELLED");
             return reservation;
         } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException("Erreur lors de l'annulation", e);
+            throw new RuntimeException("Erreur", e);
         }
     }
 
@@ -154,16 +167,15 @@ public class ReservationService {
             ref.update("adminNotes", notes, "updatedAt", LocalDateTime.now()).get();
             return ref.get().get().toObject(Reservation.class);
         } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException("Erreur lors de l'ajout de la note", e);
+            throw new RuntimeException("Erreur", e);
         }
     }
 
-    private boolean isAvailable(LocalDate checkIn, LocalDate checkOut) {
-        List<Map<String, String>> unavailable = getUnavailableDates();
+    private boolean isAvailable(String propertyId, LocalDate checkIn, LocalDate checkOut) {
+        List<Map<String, String>> unavailable = getUnavailableDates(propertyId);
         for (Map<String, String> range : unavailable) {
             LocalDate existingIn = LocalDate.parse(range.get("checkIn"));
             LocalDate existingOut = LocalDate.parse(range.get("checkOut"));
-            // Vérifier s'il y a un chevauchement
             if (checkIn.isBefore(existingOut) && checkOut.isAfter(existingIn)) {
                 return false;
             }

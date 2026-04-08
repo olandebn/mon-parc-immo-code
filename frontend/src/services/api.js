@@ -1,8 +1,14 @@
 import axios from 'axios'
 
+// En production (Vercel), VITE_API_URL pointe vers Railway (ex: https://mon-app.railway.app)
+// En développement, le proxy Vite redirige /api → localhost:8080
+const baseURL = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api`
+  : '/api'
+
 // Instance axios de base
 const api = axios.create({
-  baseURL: '/api',
+  baseURL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -26,39 +32,43 @@ export default api
 // Services Property
 // ==============================
 export const propertyService = {
-  getProperty: () => api.get('/property'),
-  updateProperty: (data) => api.put('/property', data),
-  addMainPhoto: (url) => api.post('/property/photos/main', { url }),
-  addSurroundingPhoto: (url) => api.post('/property/photos/surrounding', { url }),
+  getAllProperties: () => api.get('/properties'),
+  getProperty: (propertyId) => api.get(`/properties/${propertyId}`),
+  createProperty: (data) => api.post('/admin/properties', data),
+  updateProperty: (propertyId, data) => api.put(`/admin/properties/${propertyId}`, data),
+  deleteProperty: (propertyId) => api.delete(`/admin/properties/${propertyId}`),
+  addMainPhoto: (propertyId, url) => api.post(`/admin/properties/${propertyId}/photos/main`, { url }),
+  addSurroundingPhoto: (propertyId, url) => api.post(`/admin/properties/${propertyId}/photos/surrounding`, { url }),
 }
 
 // ==============================
 // Services Réservations
 // ==============================
 export const reservationService = {
-  getUnavailableDates: () => api.get('/reservations/unavailable-dates'),
-  createReservation: (data) => api.post('/reservations', data),
+  getUnavailableDates: (propertyId) => api.get(`/properties/${propertyId}/unavailable-dates`),
+  createReservation: (propertyId, data) => api.post(`/properties/${propertyId}/reservations`, data),
   getMyReservations: () => api.get('/reservations/my'),
   getReservation: (id) => api.get(`/reservations/${id}`),
   cancelReservation: (id) => api.patch(`/reservations/${id}/cancel`),
   // Admin
-  getAllReservations: () => api.get('/reservations/admin/all'),
-  confirmReservation: (id) => api.patch(`/reservations/admin/${id}/confirm`),
-  addAdminNote: (id, notes) => api.patch(`/reservations/admin/${id}/notes`, { notes }),
+  getAllReservations: () => api.get('/admin/reservations'),
+  getReservationsByProperty: (propertyId) => api.get(`/admin/properties/${propertyId}/reservations`),
+  confirmReservation: (id) => api.patch(`/admin/reservations/${id}/confirm`),
+  addAdminNote: (id, notes) => api.patch(`/admin/reservations/${id}/notes`, { notes }),
 }
 
 // ==============================
 // Services Tarifs
 // ==============================
 export const pricingService = {
-  getActiveSeasons: () => api.get('/pricing/seasons'),
-  calculatePrice: (checkIn, checkOut) =>
-    api.get('/pricing/calculate', { params: { checkIn, checkOut } }),
+  getActiveSeasons: (propertyId) => api.get(`/pricing/${propertyId}/seasons`),
+  calculatePrice: (propertyId, checkIn, checkOut) =>
+    api.get(`/pricing/${propertyId}/calculate`, { params: { checkIn, checkOut } }),
   // Admin
-  getAllSeasons: () => api.get('/pricing/admin/seasons'),
-  createSeason: (data) => api.post('/pricing/admin/seasons', data),
-  updateSeason: (id, data) => api.put(`/pricing/admin/seasons/${id}`, data),
-  deleteSeason: (id) => api.delete(`/pricing/admin/seasons/${id}`),
+  getAllSeasons: (propertyId) => api.get(`/admin/pricing/${propertyId}/seasons`),
+  createSeason: (propertyId, data) => api.post(`/admin/pricing/${propertyId}/seasons`, data),
+  updateSeason: (propertyId, id, data) => api.put(`/admin/pricing/${propertyId}/seasons/${id}`, data),
+  deleteSeason: (propertyId, id) => api.delete(`/admin/pricing/${propertyId}/seasons/${id}`),
 }
 
 // ==============================
@@ -95,51 +105,51 @@ export const messageService = {
 // Services Avis
 // ==============================
 export const reviewService = {
-  getPublicReviews: () => api.get('/reviews/public'),
-  getReviewSummary: () => api.get('/reviews/public/summary'),
-  submitReview: (data) => api.post('/reviews', data),
+  getPublicReviews: (propertyId) => api.get(`/reviews/public/${propertyId}`),
+  getReviewSummary: (propertyId) => api.get(`/reviews/public/${propertyId}/summary`),
+  submitReview: (propertyId, data) => api.post(`/reviews/${propertyId}`, data),
   // Admin
-  getAllReviews: () => api.get('/reviews/admin/all'),
+  getAllReviews: (propertyId) => api.get(`/admin/reviews/${propertyId}`),
   respondToReview: (id, response) =>
-    api.patch(`/reviews/admin/${id}/respond`, { response }),
+    api.patch(`/admin/reviews/${id}/respond`, { response }),
   toggleVisibility: (id, visible) =>
-    api.patch(`/reviews/admin/${id}/visibility`, { visible }),
+    api.patch(`/admin/reviews/${id}/visibility`, { visible }),
 }
 
 // ==============================
 // Services Documents
 // ==============================
 export const documentService = {
-  getClientDocuments: () => api.get('/documents'),
+  getClientDocuments: (propertyId) => api.get(`/documents/${propertyId}`),
   // Admin
-  getAllDocuments: () => api.get('/documents/admin/all'),
-  addDocument: (data) => api.post('/documents/admin', data),
-  updateDocument: (id, data) => api.put(`/documents/admin/${id}`, data),
-  deleteDocument: (id) => api.delete(`/documents/admin/${id}`),
+  getAllDocuments: (propertyId) => api.get(`/admin/documents/${propertyId}`),
+  addDocument: (propertyId, data) => api.post(`/admin/documents/${propertyId}`, data),
+  updateDocument: (id, data) => api.put(`/admin/documents/${id}`, data),
+  deleteDocument: (id) => api.delete(`/admin/documents/${id}`),
 }
 
 // ==============================
 // Services Statistiques (Admin)
 // ==============================
 export const statsService = {
-  getYearlyStats: (year) => api.get(`/admin/statistics/year/${year}`),
-  getBookingsPerMonth: (year) =>
-    api.get(`/admin/statistics/bookings-per-month/${year}`),
-  getFinancialSummary: (year) =>
-    api.get(`/admin/statistics/financial/${year}`),
-  getClientsHistory: () => api.get('/admin/statistics/clients-history'),
-  getOccupancyRate: (year) =>
-    api.get(`/admin/statistics/occupancy-rate/${year}`),
+  getYearlyStats: (propertyId, year) => api.get(`/admin/statistics/${propertyId}/year/${year}`),
+  getBookingsPerMonth: (propertyId, year) =>
+    api.get(`/admin/statistics/${propertyId}/bookings-per-month/${year}`),
+  getFinancialSummary: (propertyId, year) =>
+    api.get(`/admin/statistics/${propertyId}/financial/${year}`),
+  getClientsHistory: (propertyId) => api.get(`/admin/statistics/${propertyId}/clients-history`),
+  getOccupancyRate: (propertyId, year) =>
+    api.get(`/admin/statistics/${propertyId}/occupancy-rate/${year}`),
 }
 
 // ==============================
 // Services Dépenses (Admin)
 // ==============================
 export const expenseService = {
-  getAllExpenses: () => api.get('/admin/expenses'),
-  getExpensesByYear: (year) => api.get(`/admin/expenses/year/${year}`),
-  getExpenseSummary: (year) => api.get(`/admin/expenses/summary/${year}`),
-  addExpense: (data) => api.post('/admin/expenses', data),
+  getAllExpenses: (propertyId) => api.get(`/admin/expenses/${propertyId}`),
+  getExpensesByYear: (propertyId, year) => api.get(`/admin/expenses/${propertyId}/year/${year}`),
+  getExpenseSummary: (propertyId, year) => api.get(`/admin/expenses/${propertyId}/summary/${year}`),
+  addExpense: (propertyId, data) => api.post(`/admin/expenses/${propertyId}`, data),
   updateExpense: (id, data) => api.put(`/admin/expenses/${id}`, data),
   deleteExpense: (id) => api.delete(`/admin/expenses/${id}`),
 }

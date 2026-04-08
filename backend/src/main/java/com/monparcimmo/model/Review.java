@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 @Data
 public class Review {
     private String id;
+    private String propertyId;      // ID du bien concerné
     private String reservationId;   // La review est liée à une réservation
     private String clientUid;
     private String clientName;

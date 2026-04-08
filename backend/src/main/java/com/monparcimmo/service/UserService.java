@@ -32,6 +32,19 @@ public class UserService {
     @Value("${app.frontend-url}")
     private String frontendUrl;
 
+    // Inscription publique : crée le profil Firestore (le compte Firebase est déjà créé côté client)
+    public User createUser(User user) {
+        try {
+            user.setRole("CLIENT");
+            user.setActive(true);
+            user.setCreatedAt(LocalDateTime.now());
+            firestore.collection(USERS_COLLECTION).document(user.getUid()).set(user).get();
+            return user;
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException("Erreur lors de la création du profil", e);
+        }
+    }
+
     public User getUserByUid(String uid) {
         try {
             DocumentSnapshot doc = firestore.collection(USERS_COLLECTION).document(uid).get().get();

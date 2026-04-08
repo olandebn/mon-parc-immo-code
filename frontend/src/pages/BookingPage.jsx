@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams, Link } from 'react-router-dom'
 import Navbar from '../components/common/Navbar'
 import AvailabilityCalendar from '../components/booking/AvailabilityCalendar'
 import BookingForm from '../components/booking/BookingForm'
-import { reservationService, pricingService } from '../services/api'
+import { reservationService, pricingService, propertyService } from '../services/api'
 import { toast } from 'react-toastify'
+import { ArrowLeft } from 'lucide-react'
 
 export default function BookingPage() {
   const navigate = useNavigate()
+  const { propertyId } = useParams()
+  const [property, setProperty] = useState(null)
   const [unavailableDates, setUnavailableDates] = useState([])
   const [selectedDates, setSelectedDates] = useState({ checkIn: null, checkOut: null })
   const [priceInfo, setPriceInfo] = useState(null)
@@ -15,8 +18,18 @@ export default function BookingPage() {
   const [calculating, setCalculating] = useState(false)
 
   useEffect(() => {
-    loadUnavailableDates()
-  }, [])
+    if (!propertyId) return
+    Promise.all([
+      propertyService.getProperty(propertyId),
+      reservationService.getUnavailableDates(propertyId),
+    ])
+      .then(([propRes, datesRes]) => {
+        setProperty(propRes.data)
+        setUnavailableDates(datesRes.data)
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false))
+  }, [propertyId])
 
   useEffect(() => {
     if (selectedDates.checkIn && selectedDates.checkOut) {
@@ -24,23 +37,12 @@ export default function BookingPage() {
     }
   }, [selectedDates])
 
-  const loadUnavailableDates = async () => {
-    try {
-      const res = await reservationService.getUnavailableDates()
-      setUnavailableDates(res.data)
-    } catch (error) {
-      console.error(error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const calculatePrice = async () => {
     setCalculating(true)
     try {
       const checkIn = selectedDates.checkIn.toISOString().split('T')[0]
       const checkOut = selectedDates.checkOut.toISOString().split('T')[0]
-      const res = await pricingService.calculatePrice(checkIn, checkOut)
+      const res = await pricingService.calculatePrice(propertyId, checkIn, checkOut)
       setPriceInfo(res.data)
     } catch (error) {
       setPriceInfo(null)
@@ -54,7 +56,7 @@ export default function BookingPage() {
       const checkIn = selectedDates.checkIn.toISOString().split('T')[0]
       const checkOut = selectedDates.checkOut.toISOString().split('T')[0]
 
-      await reservationService.createReservation({
+      await reservationService.createReservation(propertyId, {
         checkInDate: checkIn,
         checkOutDate: checkOut,
         numberOfGuests: formData.numberOfGuests,
@@ -75,7 +77,20 @@ export default function BookingPage() {
       <Navbar />
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Réserver le logement</h1>
+        {/* Retour vers le bien */}
+        {propertyId && (
+          <Link
+            to={`/biens/${propertyId}`}
+            className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-6"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Retour au logement{property ? ` — ${property.name}` : ''}
+          </Link>
+        )}
+
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          {property ? `Réserver — ${property.name}` : 'Réserver le logement'}
+        </h1>
         <p className="text-gray-500 mb-8">Sélectionnez vos dates de séjour sur le calendrier</p>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

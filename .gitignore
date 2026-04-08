@@ -1,0 +1,38 @@
+# ==============================
+# Fichiers sensibles - NE JAMAIS COMMITER
+# ==============================
+firebase-service-account.json
+.env
+.env.local
+.env.production
+
+# ==============================
+# Backend Java / Maven
+# ==============================
+backend/target/
+backend/.mvn/
+*.class
+*.jar
+*.war
+
+# ==============================
+# Frontend Node
+# ==============================
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# ==============================
+# IDE
+# ==============================
+.idea/
+*.iml
+.vscode/
+*.suo
+*.user
+
+# ==============================
+# OS
+# ==============================
+.DS_Store
+Thumbs.db

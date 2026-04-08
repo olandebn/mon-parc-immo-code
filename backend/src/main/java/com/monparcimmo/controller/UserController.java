@@ -37,6 +37,29 @@ public class UserController {
         return ResponseEntity.ok(result);
     }
 
+    // AUTHENTIFIÉ - Inscription publique (crée le profil Firestore après création Firebase côté client)
+    @PostMapping("/auth/register")
+    public ResponseEntity<User> register(
+            @RequestBody Map<String, String> body,
+            Authentication auth) {
+        String uid = (String) auth.getPrincipal();
+
+        // Vérifier si le profil existe déjà (double appel)
+        try {
+            User existing = userService.getUserByUid(uid);
+            if (existing != null) return ResponseEntity.ok(existing);
+        } catch (Exception ignored) {}
+
+        User user = new User();
+        user.setUid(uid);
+        user.setFirstName(body.getOrDefault("firstName", ""));
+        user.setLastName(body.getOrDefault("lastName", ""));
+        user.setEmail(body.getOrDefault("email", ""));
+        user.setActive(true);
+
+        return ResponseEntity.ok(userService.createUser(user));
+    }
+
     // AUTHENTIFIÉ - Récupérer son profil
     @GetMapping("/users/me")
     public ResponseEntity<User> getMyProfile(Authentication auth) {
