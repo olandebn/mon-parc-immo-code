@@ -35,7 +35,10 @@ public class UserService {
     // Inscription publique : crée le profil Firestore (le compte Firebase est déjà créé côté client)
     public User createUser(User user) {
         try {
-            user.setRole("CLIENT");
+            // Ne pas écraser le rôle si déjà défini (ADMIN = gérant, CLIENT = voyageur)
+            if (user.getRole() == null) {
+                user.setRole("CLIENT");
+            }
             user.setActive(true);
             user.setCreatedAt(LocalDateTime.now());
             firestore.collection(USERS_COLLECTION).document(user.getUid()).set(user).get();

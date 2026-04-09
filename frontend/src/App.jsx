@@ -1,6 +1,6 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider } from './context/AuthContext'
+import { AuthProvider, useAuth } from './context/AuthContext'
 import ProtectedRoute from './components/common/ProtectedRoute'
 
 // Pages publiques
@@ -26,13 +26,22 @@ import AdminExpenses from './pages/admin/AdminExpenses'
 import AdminMessages from './pages/admin/AdminMessages'
 import AdminUsers from './pages/admin/AdminUsers'
 
+// Redirige selon le rôle dès qu'on est connecté
+function SmartHome() {
+  const { currentUser, isAdmin, loading } = useAuth()
+  if (loading) return null
+  if (currentUser && isAdmin)   return <Navigate to="/admin" replace />
+  if (currentUser && !isAdmin)  return <Navigate to="/mes-reservations" replace />
+  return <HomePage />
+}
+
 function App() {
   return (
     <Router>
       <AuthProvider>
         <Routes>
           {/* Routes publiques */}
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<SmartHome />} />
           <Route path="/biens/:propertyId" element={<PropertyPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/invitation/:token" element={<InvitationPage />} />

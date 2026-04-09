@@ -30,8 +30,8 @@ const injectCSS = () => {
     }
     .lp-input::placeholder { color: #475569; }
     .lp-input:focus {
-      border-color: rgba(99,102,241,0.5);
-      background: rgba(99,102,241,0.04);
+      border-color: rgba(201,136,58,0.5);
+      background: rgba(201,136,58,0.04);
     }
     .lp-tab {
       flex: 1; padding: 10px; font-size: 14px; font-weight: 600;
@@ -40,8 +40,8 @@ const injectCSS = () => {
       font-family: inherit;
     }
     .lp-tab.active {
-      background: rgba(99,102,241,0.15);
-      color: #a5b4fc;
+      background: rgba(201,136,58,0.15);
+      color: #f0c87a;
     }
     .lp-tab:not(.active) { color: #475569; }
     .lp-tab:not(.active):hover { color: #94a3b8; }
@@ -50,21 +50,21 @@ const injectCSS = () => {
       border-radius: 12px; border: none; cursor: pointer;
       font-size: 15px; font-weight: 600; font-family: inherit;
       display: flex; align-items: center; justify-content: center; gap: 8px;
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      background: linear-gradient(135deg, #c9883a, #e0a84f);
       color: #fff;
-      box-shadow: 0 0 24px rgba(99,102,241,0.35);
+      box-shadow: 0 0 24px rgba(201,136,58,0.35);
       transition: box-shadow 0.2s, transform 0.2s;
     }
     .lp-btn:hover:not(:disabled) {
-      box-shadow: 0 0 40px rgba(99,102,241,0.5);
+      box-shadow: 0 0 40px rgba(201,136,58,0.5);
       transform: translateY(-1px);
     }
     .lp-btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .lp-link {
-      color: #818cf8; font-weight: 500; text-decoration: none;
+      color: #e0a84f; font-weight: 500; text-decoration: none;
       font-size: 13px; transition: color 0.2s;
     }
-    .lp-link:hover { color: #a5b4fc; }
+    .lp-link:hover { color: #f0c87a; }
     .lp-error {
       background: rgba(239,68,68,0.08);
       border: 1px solid rgba(239,68,68,0.2);
@@ -122,6 +122,7 @@ export default function LoginPage() {
   const [regEmail, setRegEmail] = useState('')
   const [regPassword, setRegPassword] = useState('')
   const [regPasswordConfirm, setRegPasswordConfirm] = useState('')
+  const [role, setRole] = useState('CLIENT') // 'CLIENT' | 'ADMIN'
 
   const { login, register, resetPassword } = useAuth()
   const navigate = useNavigate()
@@ -186,9 +187,9 @@ export default function LoginPage() {
     }
     setLoading(true)
     try {
-      await register(regEmail, regPassword, firstName, lastName)
+      await register(regEmail, regPassword, firstName, lastName, role)
       toast.success(`Bienvenue, ${firstName} ! Votre compte a été créé.`)
-      navigate('/', { replace: true })
+      navigate(role === 'ADMIN' ? '/admin' : '/', { replace: true })
     } catch (err) {
       setError(getErrorMessage(err))
     } finally {
@@ -218,13 +219,13 @@ export default function LoginPage() {
   return (
     <div style={{
       minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: '#04050f', fontFamily: "'Inter', -apple-system, sans-serif", padding: 24, position: 'relative', overflow: 'hidden',
+      background: '#080706', fontFamily: "'Inter', -apple-system, sans-serif", padding: 24, position: 'relative', overflow: 'hidden',
     }}>
       {/* Orbes fond */}
       <div style={{ position: 'absolute', width: 600, height: 600, top: -200, left: -200, borderRadius: '50%',
-                    background: 'radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)', filter: 'blur(1px)', pointerEvents: 'none', animation: 'loginGlow 7s ease-in-out infinite' }} />
+                    background: 'radial-gradient(circle, rgba(201,136,58,0.12) 0%, transparent 70%)', filter: 'blur(1px)', pointerEvents: 'none', animation: 'loginGlow 7s ease-in-out infinite' }} />
       <div style={{ position: 'absolute', width: 400, height: 400, bottom: -100, right: -100, borderRadius: '50%',
-                    background: 'radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 70%)', filter: 'blur(1px)', pointerEvents: 'none', animation: 'loginGlow 9s ease-in-out infinite 3s' }} />
+                    background: 'radial-gradient(circle, rgba(201,136,58,0.1) 0%, transparent 70%)', filter: 'blur(1px)', pointerEvents: 'none', animation: 'loginGlow 9s ease-in-out infinite 3s' }} />
 
       <div className="lp-fadeup" style={{ width: '100%', maxWidth: 420, position: 'relative', zIndex: 1 }}>
 
@@ -232,9 +233,9 @@ export default function LoginPage() {
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <Link to="/" style={{ textDecoration: 'none', display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
             <div style={{ width: 48, height: 48, borderRadius: 14,
-                          background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                          background: 'linear-gradient(135deg, #c9883a, #e0a84f)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          boxShadow: '0 0 28px rgba(99,102,241,0.4)' }}>
+                          boxShadow: '0 0 28px rgba(201,136,58,0.4)' }}>
               <Home style={{ width: 22, height: 22, color: '#fff' }} />
             </div>
             <span style={{ fontSize: 20, fontWeight: 800, color: '#f8fafc', letterSpacing: '-0.03em' }}>
@@ -301,6 +302,42 @@ export default function LoginPage() {
           {/* ─── Formulaire Inscription ─── */}
           {tab === 'register' && (
             <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+              {/* Sélecteur de rôle */}
+              <div>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: '#94a3b8', marginBottom: 8 }}>
+                  Je suis…
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  {[
+                    { value: 'CLIENT', emoji: '🧳', title: 'Voyageur', desc: 'Je cherche un logement' },
+                    { value: 'ADMIN',  emoji: '🏠', title: 'Gérant',   desc: 'Je propose mes biens' },
+                  ].map(({ value, emoji, title, desc }) => {
+                    const active = role === value
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setRole(value)}
+                        style={{
+                          padding: '12px 10px',
+                          borderRadius: 12,
+                          border: active ? '1px solid rgba(201,136,58,0.5)' : '1px solid rgba(255,255,255,0.07)',
+                          background: active ? 'rgba(201,136,58,0.12)' : 'rgba(255,255,255,0.03)',
+                          cursor: 'pointer',
+                          textAlign: 'center',
+                          transition: 'all 0.2s',
+                        }}
+                      >
+                        <div style={{ fontSize: 22, marginBottom: 4 }}>{emoji}</div>
+                        <div style={{ fontWeight: 700, fontSize: 13, color: active ? '#f0c87a' : '#94a3b8' }}>{title}</div>
+                        <div style={{ fontSize: 11, color: '#475569', marginTop: 2 }}>{desc}</div>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <Field icon={User} type="text" value={firstName} onChange={e => setFirstName(e.target.value)}
                        placeholder="Prénom" label="Prénom" />
@@ -323,13 +360,14 @@ export default function LoginPage() {
               <button type="submit" disabled={loading} className="lp-btn" style={{ marginTop: 4 }}>
                 {loading
                   ? <><span style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} /> Création...</>
-                  : <><ArrowRight style={{ width: 16, height: 16 }} /> Créer mon compte</>
+                  : <><ArrowRight style={{ width: 16, height: 16 }} /> {role === 'ADMIN' ? 'Créer mon espace gérant' : 'Créer mon compte'}</>
                 }
               </button>
 
               <p style={{ fontSize: 12, color: '#334155', textAlign: 'center', marginTop: 4, lineHeight: 1.6 }}>
-                En créant un compte vous acceptez d'être contacté par le propriétaire
-                dans le cadre de votre réservation.
+                {role === 'ADMIN'
+                  ? "Vous aurez accès à votre tableau de bord pour gérer vos biens."
+                  : "En créant un compte vous acceptez d'être contacté par le propriétaire dans le cadre de votre réservation."}
               </p>
             </form>
           )}

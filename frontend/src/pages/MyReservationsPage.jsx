@@ -10,8 +10,8 @@ import { fr } from 'date-fns/locale'
 const CSS = `
   .mrp-root {
     min-height: 100vh;
-    background: #04050f;
-    color: #e2e8f0;
+    background: #080706;
+    color: #f5f0ea;
   }
   @keyframes mrp-fadein {
     from { opacity: 0; transform: translateY(14px); }
@@ -33,8 +33,8 @@ const CSS = `
     cursor: pointer;
   }
   .mrp-card:hover {
-    background: rgba(139,92,246,0.08);
-    border-color: rgba(139,92,246,0.3);
+    background: rgba(201,136,58,0.08);
+    border-color: rgba(201,136,58,0.3);
     transform: translateY(-2px);
   }
   .mrp-status-pending {
@@ -68,8 +68,8 @@ const CSS = `
     display: inline-block;
   }
   .mrp-status-completed {
-    background: rgba(99,102,241,0.12);
-    border: 1px solid rgba(99,102,241,0.3);
+    background: rgba(201,136,58,0.12);
+    border: 1px solid rgba(201,136,58,0.3);
     color: #818cf8;
     font-size: 12px;
     font-weight: 600;
@@ -81,7 +81,7 @@ const CSS = `
     width: 48px;
     height: 48px;
     border-radius: 12px;
-    background: rgba(139,92,246,0.15);
+    background: rgba(201,136,58,0.15);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -101,7 +101,7 @@ const CSS = `
     gap: 8px;
     padding: 12px 28px;
     border-radius: 12px;
-    background: linear-gradient(135deg, #8b5cf6, #6366f1);
+    background: linear-gradient(135deg, #c9883a, #6366f1);
     color: white;
     font-weight: 600;
     font-size: 15px;
@@ -112,8 +112,8 @@ const CSS = `
   .mrp-spinner {
     width: 40px;
     height: 40px;
-    border: 3px solid rgba(139,92,246,0.2);
-    border-top-color: #8b5cf6;
+    border: 3px solid rgba(201,136,58,0.2);
+    border-top-color: #c9883a;
     border-radius: 50%;
     animation: mrp-spin 0.8s linear infinite;
   }
@@ -176,7 +176,7 @@ export default function MyReservationsPage() {
         <div style={{
           position: 'absolute', top: '10%', right: '-10%',
           width: '500px', height: '500px', borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(99,102,241,0.07) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(201,136,58,0.07) 0%, transparent 70%)',
         }} />
       </div>
 
@@ -184,7 +184,7 @@ export default function MyReservationsPage() {
 
         {/* Header */}
         <div className="mrp-fadein" style={{ marginBottom: '36px' }}>
-          <p style={{ fontSize: '13px', color: '#8b5cf6', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
+          <p style={{ fontSize: '13px', color: '#c9883a', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
             Mon espace
           </p>
           <h1 style={{ fontSize: '32px', fontWeight: 800, color: '#f1f5f9', marginBottom: '8px' }}>
@@ -204,11 +204,11 @@ export default function MyReservationsPage() {
           <div className="mrp-empty mrp-fadein">
             <div style={{
               width: '72px', height: '72px', borderRadius: '50%',
-              background: 'rgba(139,92,246,0.1)',
+              background: 'rgba(201,136,58,0.1)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               margin: '0 auto 20px',
             }}>
-              <Calendar size={32} style={{ color: '#8b5cf6' }} />
+              <Calendar size={32} style={{ color: '#c9883a' }} />
             </div>
             <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#f1f5f9', marginBottom: '10px' }}>
               Aucune réservation pour l'instant
@@ -239,7 +239,7 @@ export default function MyReservationsPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     {/* Icon */}
                     <div className="mrp-icon-box">
-                      <Calendar size={22} style={{ color: '#a78bfa' }} />
+                      <Calendar size={22} style={{ color: '#e0a84f' }} />
                     </div>
 
                     {/* Info */}

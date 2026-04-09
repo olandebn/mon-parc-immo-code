@@ -12,7 +12,7 @@ import {
 const CSS = `
   .pp-root {
     min-height: 100vh;
-    background: #04050f;
+    background: #080706;
     color: #e2e8f0;
     font-family: 'Inter', sans-serif;
   }
@@ -85,12 +85,12 @@ const CSS = `
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: rgba(139,92,246,0.12);
-    border: 1px solid rgba(139,92,246,0.25);
+    background: rgba(201,136,58,0.12);
+    border: 1px solid rgba(201,136,58,0.25);
     border-radius: 999px;
     padding: 6px 14px;
     font-size: 13px;
-    color: #c4b5fd;
+    color: #f0c87a;
   }
   /* Status badge */
   .pp-badge-confirmed {
@@ -103,8 +103,8 @@ const CSS = `
   }
   /* CTA booking block */
   .pp-cta {
-    background: linear-gradient(135deg, rgba(139,92,246,0.18), rgba(59,130,246,0.12));
-    border: 1px solid rgba(139,92,246,0.3);
+    background: linear-gradient(135deg, rgba(201,136,58,0.18), rgba(180,110,40,0.12));
+    border: 1px solid rgba(201,136,58,0.3);
     border-radius: 20px;
     padding: 28px;
     position: sticky;
@@ -119,7 +119,7 @@ const CSS = `
     width: 100%;
     padding: 14px;
     border-radius: 12px;
-    background: linear-gradient(135deg, #8b5cf6, #6366f1);
+    background: linear-gradient(135deg, #c9883a, #c9883a);
     color: white;
     font-weight: 600;
     font-size: 15px;
@@ -180,11 +180,11 @@ const CSS = `
     content: '';
     flex: 1;
     height: 1px;
-    background: linear-gradient(90deg, rgba(139,92,246,0.4), transparent);
+    background: linear-gradient(90deg, rgba(201,136,58,0.4), transparent);
   }
   /* Gradient text */
   .pp-gradient-text {
-    background: linear-gradient(135deg, #a78bfa, #818cf8);
+    background: linear-gradient(135deg, #e0a84f, #e0a84f);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -215,8 +215,8 @@ const CSS = `
   .pp-spinner {
     width: 48px;
     height: 48px;
-    border: 3px solid rgba(139,92,246,0.2);
-    border-top-color: #8b5cf6;
+    border: 3px solid rgba(201,136,58,0.2);
+    border-top-color: #c9883a;
     border-radius: 50%;
     animation: pp-spin 0.8s linear infinite;
   }
@@ -382,12 +382,12 @@ export default function PropertyPage() {
         <div style={{
           position: 'absolute', top: '-10%', right: '-5%',
           width: '500px', height: '500px', borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(201,136,58,0.08) 0%, transparent 70%)',
         }} />
         <div style={{
           position: 'absolute', bottom: '20%', left: '-8%',
           width: '400px', height: '400px', borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(59,130,246,0.06) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(180,110,40,0.06) 0%, transparent 70%)',
         }} />
       </div>
 
@@ -402,7 +402,7 @@ export default function PropertyPage() {
             marginBottom: '28px',
             transition: 'color 0.2s',
           }}
-          onMouseEnter={e => e.currentTarget.style.color = '#a78bfa'}
+          onMouseEnter={e => e.currentTarget.style.color = '#e0a84f'}
           onMouseLeave={e => e.currentTarget.style.color = '#94a3b8'}
         >
           <ArrowLeft size={16} />
@@ -425,7 +425,7 @@ export default function PropertyPage() {
           </div>
           {property.city && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8', fontSize: '15px' }}>
-              <MapPin size={16} style={{ color: '#a78bfa' }} />
+              <MapPin size={16} style={{ color: '#e0a84f' }} />
               {property.address ? `${property.address}, ` : ''}{property.city}
               {property.country ? `, ${property.country}` : ''}
             </div>
@@ -472,7 +472,7 @@ export default function PropertyPage() {
               <div>
                 <p className="pp-section-title">Règlement intérieur</p>
                 <div className="pp-card" style={{ padding: '20px', display: 'flex', gap: '14px' }}>
-                  <Shield size={20} style={{ color: '#a78bfa', flexShrink: 0, marginTop: '2px' }} />
+                  <Shield size={20} style={{ color: '#e0a84f', flexShrink: 0, marginTop: '2px' }} />
                   <p style={{ color: '#94a3b8', lineHeight: 1.7, fontSize: '14px', whiteSpace: 'pre-line' }}>
                     {property.houseRules}
                   </p>
@@ -503,7 +503,7 @@ export default function PropertyPage() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                           <div style={{
                             width: '36px', height: '36px', borderRadius: '50%',
-                            background: 'linear-gradient(135deg, #8b5cf6, #6366f1)',
+                            background: 'linear-gradient(135deg, #c9883a, #c9883a)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             color: 'white', fontWeight: 700, fontSize: '14px',
                           }}>
@@ -576,11 +576,11 @@ export default function PropertyPage() {
               {/* Trust signals */}
               <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#64748b', fontSize: '13px' }}>
-                  <Shield size={15} style={{ color: '#a78bfa' }} />
+                  <Shield size={15} style={{ color: '#e0a84f' }} />
                   Pas de paiement en ligne — règlement à l'arrivée
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#64748b', fontSize: '13px' }}>
-                  <Clock size={15} style={{ color: '#a78bfa' }} />
+                  <Clock size={15} style={{ color: '#e0a84f' }} />
                   Réponse rapide du propriétaire
                 </div>
               </div>
@@ -593,13 +593,13 @@ export default function PropertyPage() {
                 {property.checkInTime && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                     <span style={{ color: '#64748b' }}>Arrivée</span>
-                    <span style={{ color: '#c4b5fd', fontWeight: 600 }}>à partir de {property.checkInTime}</span>
+                    <span style={{ color: '#f0c87a', fontWeight: 600 }}>à partir de {property.checkInTime}</span>
                   </div>
                 )}
                 {property.checkOutTime && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', padding: '8px 0' }}>
                     <span style={{ color: '#64748b' }}>Départ</span>
-                    <span style={{ color: '#c4b5fd', fontWeight: 600 }}>avant {property.checkOutTime}</span>
+                    <span style={{ color: '#f0c87a', fontWeight: 600 }}>avant {property.checkOutTime}</span>
                   </div>
                 )}
               </div>

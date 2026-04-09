@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { statsService, reservationService, messageService } from '../../services/api'
+import { reservationService, messageService } from '../../services/api'
 import {
   Calendar, Users, Euro, BarChart2, FileText,
   MessageSquare, Settings, TrendingUp, Home, Building2
@@ -38,13 +38,34 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     Promise.all([
-      statsService.getYearlyStats(currentYear),
       reservationService.getAllReservations(),
       messageService.getAllThreads(),
     ])
-      .then(([statsRes, reservRes, msgRes]) => {
-        setStats(statsRes.data)
-        setRecentReservations(reservRes.data.slice(0, 5))
+      .then(([reservRes, msgRes]) => {
+        const allReservations = reservRes.data || []
+        const yearReservations = allReservations.filter(r => {
+          const y = r.checkInDate ? new Date(r.checkInDate).getFullYear() : null
+          return y === currentYear
+        })
+        const totalRevenue = yearReservations
+          .filter(r => r.status !== 'CANCELLED')
+          .reduce((sum, r) => sum + (r.totalPrice || 0), 0)
+        const totalNights = yearReservations
+          .filter(r => r.status !== 'CANCELLED')
+          .reduce((sum, r) => {
+            const nights = r.checkInDate && r.checkOutDate
+              ? Math.max(1, Math.round((new Date(r.checkOutDate) - new Date(r.checkInDate)) / 86400000))
+              : 0
+            return sum + nights
+          }, 0)
+        const confirmedCount = yearReservations.filter(r => r.status !== 'CANCELLED').length
+        setStats({
+          totalReservations: yearReservations.length,
+          totalRevenue,
+          totalNights,
+          averageStayDuration: confirmedCount > 0 ? totalNights / confirmedCount : 0,
+        })
+        setRecentReservations(allReservations.slice(0, 5))
         setUnreadThreads(msgRes.data)
       })
       .catch(console.error)

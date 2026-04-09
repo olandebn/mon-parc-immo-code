@@ -26,16 +26,18 @@ export function AuthProvider({ children }) {
           const token = await firebaseUser.getIdToken()
           api.defaults.headers.common['Authorization'] = `Bearer ${token}`
 
-          const tokenResult = await firebaseUser.getIdTokenResult()
-          setIsAdmin(!!tokenResult.claims.admin)
-
           // Charger le profil — peut ne pas encore exister juste après l'inscription
           try {
             const profileResponse = await api.get('/users/me')
-            setUserProfile(profileResponse.data)
+            const profile = profileResponse.data
+            setUserProfile(profile)
+            // isAdmin = rôle ADMIN dans Firestore OU custom claim Firebase
+            const tokenResult = await firebaseUser.getIdTokenResult()
+            setIsAdmin(profile?.role === 'ADMIN' || !!tokenResult.claims.admin)
           } catch (profileError) {
             // Profil pas encore créé (inscription en cours) — pas bloquant
             setUserProfile(null)
+            setIsAdmin(false)
           }
         } catch (error) {
           console.error('Erreur lors du chargement du profil:', error)
@@ -58,7 +60,7 @@ export function AuthProvider({ children }) {
   }
 
   // Inscription publique
-  const register = async (email, password, firstName, lastName) => {
+  const register = async (email, password, firstName, lastName, role = 'CLIENT') => {
     // 1. Créer le compte Firebase Auth
     const userCredential = await createUserWithEmailAndPassword(auth, email, password)
 
@@ -66,11 +68,10 @@ export function AuthProvider({ children }) {
     const token = await userCredential.user.getIdToken()
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`
 
-    // 3. Tenter de créer le profil Firestore via le backend
-    //    Si le backend est indisponible, on continue quand même —
-    //    le profil sera créé lors du prochain appel à /users/me
+    // 3. Tenter de créer le profil Firestore via le backend (avec le rôle choisi)
+    //    Si le backend est indisponible, on continue quand même
     try {
-      await api.post('/auth/register', { firstName, lastName, email }, {
+      await api.post('/auth/register', { firstName, lastName, email, role }, {
         headers: { Authorization: `Bearer ${token}` }
       })
     } catch (backendErr) {

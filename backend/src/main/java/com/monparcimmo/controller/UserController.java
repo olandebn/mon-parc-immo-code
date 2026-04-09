@@ -50,11 +50,15 @@ public class UserController {
             if (existing != null) return ResponseEntity.ok(existing);
         } catch (Exception ignored) {}
 
+        // Rôle : ADMIN (gérant) ou CLIENT (voyageur), CLIENT par défaut
+        String role = "ADMIN".equalsIgnoreCase(body.getOrDefault("role", "CLIENT")) ? "ADMIN" : "CLIENT";
+
         User user = new User();
         user.setUid(uid);
         user.setFirstName(body.getOrDefault("firstName", ""));
         user.setLastName(body.getOrDefault("lastName", ""));
         user.setEmail(body.getOrDefault("email", ""));
+        user.setRole(role);
         user.setActive(true);
 
         return ResponseEntity.ok(userService.createUser(user));
