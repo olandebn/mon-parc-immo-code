@@ -4,18 +4,123 @@ import { documentService } from '../../services/api'
 import { Plus, Edit2, Trash2, Eye, EyeOff, FileText, ExternalLink } from 'lucide-react'
 import { toast } from 'react-toastify'
 
-const DOC_TYPES = {
-  ARRIVAL_INSTRUCTIONS: 'Consignes d\'arrivée',
-  DEPARTURE_INSTRUCTIONS: 'Consignes de départ',
-  HOUSE_RULES: 'Règlement intérieur',
-  OTHER: 'Autre document',
+/* ── CSS ──────────────────────────────────────────────────────────────────── */
+const CSS = `
+  .doc-root { min-height: 100vh; background: #080706; color: #f5f0ea; font-family: 'Inter', -apple-system, sans-serif; }
+
+  @keyframes doc-fadein { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+  .doc-fadein { animation: doc-fadein 0.4s ease both; }
+
+  .doc-header {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(8,7,6,0.94);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  .doc-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px; padding: 16px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    transition: border-color 0.2s;
+  }
+  .doc-card.hidden { opacity: 0.55; }
+
+  .doc-form-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(201,136,58,0.2);
+    border-radius: 16px; padding: 24px; margin-bottom: 24px;
+  }
+
+  .doc-input {
+    width: 100%; padding: 10px 14px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px; font-size: 14px;
+    color: #f5f0ea; font-family: inherit; outline: none;
+    transition: border-color 0.2s; box-sizing: border-box;
+  }
+  .doc-input::placeholder { color: rgba(255,255,255,0.25); }
+  .doc-input:focus { border-color: rgba(201,136,58,0.5); }
+  .doc-input option { background: #1a1814; color: #f5f0ea; }
+
+  .doc-label { display: block; font-size: 12px; font-weight: 600; color: #94a3b8; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .doc-btn-primary {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 9px 18px; background: linear-gradient(135deg, #c9883a, #e0a84f);
+    color: #080706; border: none; border-radius: 10px;
+    font-size: 14px; font-weight: 700; cursor: pointer; transition: opacity 0.2s;
+  }
+  .doc-btn-primary:hover { opacity: 0.88; }
+  .doc-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .doc-btn-ghost {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 14px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px; color: #94a3b8;
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  .doc-btn-ghost:hover { background: rgba(255,255,255,0.1); color: #f5f0ea; }
+
+  .doc-icon-btn {
+    width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+    border-radius: 8px; border: none; cursor: pointer; background: transparent;
+    color: #475569; transition: all 0.15s; text-decoration: none;
+  }
+  .doc-icon-btn:hover { background: rgba(255,255,255,0.08); color: #f5f0ea; }
+  .doc-icon-btn.danger:hover { background: rgba(239,68,68,0.1); color: #f87171; }
+
+  .doc-type-chip {
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+    color: #64748b;
+  }
+
+  .doc-hidden-tag {
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+    padding: 2px 8px; border-radius: 99px;
+    background: rgba(255,255,255,0.05); color: #475569;
+  }
+
+  .doc-toggle {
+    display: flex; align-items: center; gap: 8px; cursor: pointer;
+  }
+  .doc-toggle input[type="checkbox"] { accent-color: #c9883a; width: 16px; height: 16px; cursor: pointer; }
+
+  .doc-spinner {
+    width: 36px; height: 36px;
+    border: 3px solid rgba(201,136,58,0.2);
+    border-top-color: #c9883a;
+    border-radius: 50%;
+    animation: doc-spin 0.8s linear infinite;
+  }
+  @keyframes doc-spin { to { transform: rotate(360deg); } }
+`
+
+function injectCSS() {
+  if (document.getElementById('doc-css')) return
+  const s = document.createElement('style')
+  s.id = 'doc-css'
+  s.textContent = CSS
+  document.head.appendChild(s)
 }
 
-const emptyForm = {
-  title: '', type: 'HOUSE_RULES',
-  fileUrl: '', fileName: '',
-  visibleToClients: true, notes: ''
+const DOC_TYPES = {
+  ARRIVAL_INSTRUCTIONS:   'Consignes d\'arrivée',
+  DEPARTURE_INSTRUCTIONS: 'Consignes de départ',
+  HOUSE_RULES:            'Règlement intérieur',
+  OTHER:                  'Autre document',
 }
+const DOC_EMOJI = {
+  ARRIVAL_INSTRUCTIONS: '🚪', DEPARTURE_INSTRUCTIONS: '🏃', HOUSE_RULES: '📋', OTHER: '📄',
+}
+
+const emptyForm = { title: '', type: 'HOUSE_RULES', fileUrl: '', fileName: '', visibleToClients: true, notes: '' }
 
 export default function AdminDocuments() {
   const [documents, setDocuments] = useState([])
@@ -25,7 +130,7 @@ export default function AdminDocuments() {
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
 
-  useEffect(() => { loadDocuments() }, [])
+  useEffect(() => { injectCSS(); loadDocuments() }, [])
 
   const loadDocuments = async () => {
     try {
@@ -45,182 +150,140 @@ export default function AdminDocuments() {
         await documentService.addDocument(form)
         toast.success('Document ajouté')
       }
-      setShowForm(false)
-      setEditingId(null)
-      setForm(emptyForm)
-      loadDocuments()
+      setShowForm(false); setEditingId(null); setForm(emptyForm); loadDocuments()
     } catch { toast.error('Erreur') }
     finally { setSaving(false) }
   }
 
   const handleEdit = (doc) => {
-    setForm({
-      title: doc.title || '',
-      type: doc.type || 'OTHER',
-      fileUrl: doc.fileUrl || '',
-      fileName: doc.fileName || '',
-      visibleToClients: doc.visibleToClients !== false,
-      notes: doc.notes || '',
-    })
-    setEditingId(doc.id)
-    setShowForm(true)
+    setForm({ title: doc.title || '', type: doc.type || 'OTHER', fileUrl: doc.fileUrl || '', fileName: doc.fileName || '', visibleToClients: doc.visibleToClients !== false, notes: doc.notes || '' })
+    setEditingId(doc.id); setShowForm(true)
   }
 
   const handleDelete = async (id) => {
     if (!window.confirm('Supprimer ce document ?')) return
-    try {
-      await documentService.deleteDocument(id)
-      toast.success('Document supprimé')
-      setDocuments(prev => prev.filter(d => d.id !== id))
-    } catch { toast.error('Erreur') }
+    try { await documentService.deleteDocument(id); toast.success('Document supprimé'); setDocuments(prev => prev.filter(d => d.id !== id)) }
+    catch { toast.error('Erreur') }
   }
 
   const toggleVisibility = async (doc) => {
     try {
       await documentService.updateDocument(doc.id, { ...doc, visibleToClients: !doc.visibleToClients })
-      setDocuments(prev =>
-        prev.map(d => d.id === doc.id ? { ...d, visibleToClients: !d.visibleToClients } : d)
-      )
+      setDocuments(prev => prev.map(d => d.id === doc.id ? { ...d, visibleToClients: !d.visibleToClients } : d))
     } catch { toast.error('Erreur') }
   }
 
+  const F = ({ label, children, hint }) => (
+    <div>
+      <label className="doc-label">{label}</label>
+      {children}
+      {hint && <p style={{ fontSize: 11, color: '#475569', marginTop: 4 }}>{hint}</p>}
+    </div>
+  )
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link to="/admin" className="text-gray-400 hover:text-gray-600">← Dashboard</Link>
-            <h1 className="text-xl font-bold text-gray-900">Documents</h1>
+    <div className="doc-root">
+
+      {/* ── Header ── */}
+      <header className="doc-header">
+        <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 24px', height: 62, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <Link to="/admin" style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', textDecoration: 'none' }}
+              onMouseEnter={e => e.currentTarget.style.color = '#e0a84f'}
+              onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.35)'}
+            >← Dashboard</Link>
+            <span style={{ color: 'rgba(255,255,255,0.1)' }}>|</span>
+            <span style={{ fontSize: 17, fontWeight: 800, letterSpacing: '-0.02em' }}>Documents</span>
           </div>
-          <button
-            onClick={() => { setForm(emptyForm); setEditingId(null); setShowForm(true) }}
-            className="btn-primary flex items-center gap-2 text-sm"
-          >
-            <Plus className="w-4 h-4" /> Ajouter
+          <button onClick={() => { setForm(emptyForm); setEditingId(null); setShowForm(true) }} className="doc-btn-primary">
+            <Plus size={15} /> Ajouter
           </button>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-6">
-        <p className="text-sm text-gray-500 mb-6">
-          Les documents marqués "Visible" sont accessibles aux clients connectés depuis la page Guide.
-          Vous pouvez ajouter des URL Firebase Storage ou des liens externes.
+      <main style={{ maxWidth: 900, margin: '0 auto', padding: '36px 24px 80px' }}>
+        <p style={{ fontSize: 13, color: '#64748b', marginBottom: 24 }}>
+          Les documents marqués "Visible" sont accessibles aux clients depuis la page Guide. Collez l'URL Firebase Storage ou un lien direct.
         </p>
 
-        {/* Formulaire */}
+        {/* ── Formulaire ── */}
         {showForm && (
-          <div className="card mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              {editingId ? 'Modifier le document' : 'Ajouter un document'}
+          <div className="doc-form-card doc-fadein">
+            <h2 style={{ fontSize: 16, fontWeight: 800, color: '#f5f0ea', marginBottom: 20, letterSpacing: '-0.02em' }}>
+              {editingId ? '✏️ Modifier le document' : '➕ Ajouter un document'}
             </h2>
-            <form onSubmit={handleSave} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Titre</label>
-                  <input type="text" value={form.title} required
-                    onChange={(e) => setForm({ ...form, title: e.target.value })}
-                    className="input-field" placeholder="Ex: Consignes d'arrivée" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                  <select value={form.type}
-                    onChange={(e) => setForm({ ...form, type: e.target.value })}
-                    className="input-field">
+            <form onSubmit={handleSave}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }}>
+                <F label="Titre *">
+                  <input type="text" value={form.title} required onChange={(e) => setForm({ ...form, title: e.target.value })} className="doc-input" placeholder="Consignes d'arrivée" />
+                </F>
+                <F label="Type">
+                  <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className="doc-input">
                     {Object.entries(DOC_TYPES).map(([key, label]) => (
-                      <option key={key} value={key}>{label}</option>
+                      <option key={key} value={key}>{DOC_EMOJI[key]} {label}</option>
                     ))}
                   </select>
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    URL du fichier (Firebase Storage ou lien direct)
-                  </label>
-                  <input type="url" value={form.fileUrl}
-                    onChange={(e) => setForm({ ...form, fileUrl: e.target.value })}
-                    className="input-field"
-                    placeholder="https://firebasestorage.googleapis.com/..." />
-                  <p className="text-xs text-gray-400 mt-1">
-                    Uploadez d'abord le fichier sur Firebase Storage et collez l'URL ici.
-                  </p>
-                </div>
+                </F>
               </div>
-
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={form.visibleToClients}
-                  onChange={(e) => setForm({ ...form, visibleToClients: e.target.checked })}
-                  className="rounded" />
-                <span className="text-sm text-gray-700">
-                  Visible par les clients connectés
-                </span>
+              <div style={{ marginBottom: 16 }}>
+                <F label="URL du fichier" hint="Uploadez d'abord sur Firebase Storage et collez l'URL ici.">
+                  <input type="url" value={form.fileUrl} onChange={(e) => setForm({ ...form, fileUrl: e.target.value })} className="doc-input" placeholder="https://firebasestorage.googleapis.com/…" />
+                </F>
+              </div>
+              <label className="doc-toggle" style={{ marginBottom: 20 }}>
+                <input type="checkbox" checked={form.visibleToClients} onChange={(e) => setForm({ ...form, visibleToClients: e.target.checked })} />
+                <span style={{ fontSize: 14, color: '#94a3b8' }}>Visible par les clients connectés</span>
               </label>
-
-              <div className="flex gap-3">
-                <button type="submit" disabled={saving} className="btn-primary">
-                  {saving ? 'Enregistrement...' : 'Enregistrer'}
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button type="submit" disabled={saving} className="doc-btn-primary">
+                  {saving ? 'Enregistrement…' : 'Enregistrer'}
                 </button>
-                <button type="button" onClick={() => setShowForm(false)} className="btn-secondary">
-                  Annuler
-                </button>
+                <button type="button" onClick={() => setShowForm(false)} className="doc-btn-ghost">Annuler</button>
               </div>
             </form>
           </div>
         )}
 
-        {/* Liste */}
+        {/* ── Liste ── */}
         {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
+            <div className="doc-spinner" />
+          </div>
+        ) : documents.length === 0 ? (
+          <div className="doc-fadein" style={{ textAlign: 'center', padding: '60px 0' }}>
+            <FileText size={40} style={{ color: 'rgba(255,255,255,0.08)', margin: '0 auto 16px' }} />
+            <p style={{ color: '#475569', fontSize: 14 }}>Aucun document. Ajoutez le règlement intérieur, les consignes d'arrivée, etc.</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {documents.length === 0 && (
-              <div className="card text-center py-10">
-                <FileText className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-                <p className="text-gray-400">Aucun document. Ajoutez le règlement intérieur,
-                les consignes d'arrivée, etc.</p>
-              </div>
-            )}
-            {documents.map((doc) => (
-              <div key={doc.id} className={`card flex items-center justify-between ${
-                !doc.visibleToClients ? 'opacity-70' : ''
-              }`}>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center text-xl">
-                    {doc.type === 'ARRIVAL_INSTRUCTIONS' ? '🚪' :
-                     doc.type === 'DEPARTURE_INSTRUCTIONS' ? '🏃' :
-                     doc.type === 'HOUSE_RULES' ? '📋' : '📄'}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {documents.map((doc, i) => (
+              <div key={doc.id} className={`doc-card doc-fadein ${!doc.visibleToClients ? 'hidden' : ''}`} style={{ animationDelay: `${i * 0.04}s` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(201,136,58,0.08)', border: '1px solid rgba(201,136,58,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
+                    {DOC_EMOJI[doc.type]}
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-medium text-gray-900">{doc.title}</h3>
-                      {!doc.visibleToClients && (
-                        <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                          Masqué
-                        </span>
-                      )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+                      <h3 style={{ fontSize: 14, fontWeight: 700, color: '#f5f0ea' }}>{doc.title}</h3>
+                      {!doc.visibleToClients && <span className="doc-hidden-tag">Masqué</span>}
                     </div>
-                    <p className="text-xs text-gray-500">{DOC_TYPES[doc.type]}</p>
+                    <p className="doc-type-chip">{DOC_TYPES[doc.type]}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-1">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   {doc.fileUrl && (
-                    <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer"
-                      className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg">
-                      <ExternalLink className="w-4 h-4" />
+                    <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="doc-icon-btn" title="Ouvrir">
+                      <ExternalLink size={15} />
                     </a>
                   )}
-                  <button onClick={() => toggleVisibility(doc)}
-                    className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-50 rounded-lg"
-                    title={doc.visibleToClients ? 'Masquer' : 'Afficher'}>
-                    {doc.visibleToClients ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                  <button onClick={() => toggleVisibility(doc)} className="doc-icon-btn" title={doc.visibleToClients ? 'Masquer' : 'Afficher'}>
+                    {doc.visibleToClients ? <Eye size={15} /> : <EyeOff size={15} />}
                   </button>
-                  <button onClick={() => handleEdit(doc)}
-                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg">
-                    <Edit2 className="w-4 h-4" />
+                  <button onClick={() => handleEdit(doc)} className="doc-icon-btn" title="Modifier">
+                    <Edit2 size={15} />
                   </button>
-                  <button onClick={() => handleDelete(doc.id)}
-                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
-                    <Trash2 className="w-4 h-4" />
+                  <button onClick={() => handleDelete(doc.id)} className="doc-icon-btn danger" title="Supprimer">
+                    <Trash2 size={15} />
                   </button>
                 </div>
               </div>

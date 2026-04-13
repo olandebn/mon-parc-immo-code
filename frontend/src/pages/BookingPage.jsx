@@ -7,6 +7,34 @@ import { reservationService, pricingService, propertyService } from '../services
 import { toast } from 'react-toastify'
 import { ArrowLeft } from 'lucide-react'
 
+const CSS = `
+  .book-root { min-height: 100vh; background: #080706; color: #f5f0ea; font-family: 'Inter', -apple-system, sans-serif; }
+
+  @keyframes book-fadein { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+  .book-fadein { animation: book-fadein 0.4s ease both; }
+
+  .book-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 16px; padding: 24px;
+  }
+
+  .book-legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  .book-spinner {
+    width: 36px; height: 36px;
+    border: 3px solid rgba(201,136,58,0.2);
+    border-top-color: #c9883a;
+    border-radius: 50%;
+    animation: book-spin 0.8s linear infinite;
+  }
+  @keyframes book-spin { to { transform: rotate(360deg); } }
+`
+function injectCSS() {
+  if (document.getElementById('book-css')) return
+  const s = document.createElement('style'); s.id = 'book-css'; s.textContent = CSS; document.head.appendChild(s)
+}
+
 export default function BookingPage() {
   const navigate = useNavigate()
   const { propertyId } = useParams()
@@ -18,6 +46,7 @@ export default function BookingPage() {
   const [calculating, setCalculating] = useState(false)
 
   useEffect(() => {
+    injectCSS()
     if (!propertyId) return
     Promise.all([
       propertyService.getProperty(propertyId),
@@ -32,9 +61,7 @@ export default function BookingPage() {
   }, [propertyId])
 
   useEffect(() => {
-    if (selectedDates.checkIn && selectedDates.checkOut) {
-      calculatePrice()
-    }
+    if (selectedDates.checkIn && selectedDates.checkOut) calculatePrice()
   }, [selectedDates])
 
   const calculatePrice = async () => {
@@ -44,27 +71,21 @@ export default function BookingPage() {
       const checkOut = selectedDates.checkOut.toISOString().split('T')[0]
       const res = await pricingService.calculatePrice(propertyId, checkIn, checkOut)
       setPriceInfo(res.data)
-    } catch (error) {
-      setPriceInfo(null)
-    } finally {
-      setCalculating(false)
-    }
+    } catch { setPriceInfo(null) }
+    finally { setCalculating(false) }
   }
 
   const handleBooking = async (formData) => {
     try {
       const checkIn = selectedDates.checkIn.toISOString().split('T')[0]
       const checkOut = selectedDates.checkOut.toISOString().split('T')[0]
-
       await reservationService.createReservation(propertyId, {
-        checkInDate: checkIn,
-        checkOutDate: checkOut,
+        checkInDate: checkIn, checkOutDate: checkOut,
         numberOfGuests: formData.numberOfGuests,
         notes: formData.notes,
         totalPrice: priceInfo?.totalPrice || 0,
         pricingType: priceInfo?.pricingType || 'NIGHTLY',
       })
-
       toast.success('Demande de réservation envoyée ! Vous recevrez une confirmation par email.')
       navigate('/mes-reservations')
     } catch (error) {
@@ -73,33 +94,39 @@ export default function BookingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="book-root">
       <Navbar />
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Retour vers le bien */}
+      <main style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 24px 80px' }}>
+
+        {/* Retour */}
         {propertyId && (
-          <Link
-            to={`/biens/${propertyId}`}
-            className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-6"
+          <Link to={`/biens/${propertyId}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#64748b', textDecoration: 'none', marginBottom: 24 }}
+            onMouseEnter={e => e.currentTarget.style.color = '#e0a84f'}
+            onMouseLeave={e => e.currentTarget.style.color = '#64748b'}
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft size={14} />
             Retour au logement{property ? ` — ${property.name}` : ''}
           </Link>
         )}
 
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          {property ? `Réserver — ${property.name}` : 'Réserver le logement'}
-        </h1>
-        <p className="text-gray-500 mb-8">Sélectionnez vos dates de séjour sur le calendrier</p>
+        <div className="book-fadein">
+          <p style={{ fontSize: 12, fontWeight: 700, color: '#c9883a', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>✦ Réservation</p>
+          <h1 style={{ fontSize: 28, fontWeight: 900, letterSpacing: '-0.04em', marginBottom: 6 }}>
+            {property ? property.name : 'Réserver le logement'}
+          </h1>
+          <p style={{ color: '#64748b', fontSize: 14, marginBottom: 36 }}>Sélectionnez vos dates de séjour sur le calendrier.</p>
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
           {/* Calendrier */}
-          <div className="card">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Disponibilités</h2>
+          <div className="book-card book-fadein" style={{ animationDelay: '0.05s' }}>
+            <p style={{ fontSize: 12, fontWeight: 700, color: '#c9883a', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 16 }}>
+              ✦ Disponibilités
+            </p>
             {loading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 240 }}>
+                <div className="book-spinner" />
               </div>
             ) : (
               <AvailabilityCalendar
@@ -108,46 +135,41 @@ export default function BookingPage() {
                 onDatesChange={setSelectedDates}
               />
             )}
+
+            {/* Légende */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 16, paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+              {[
+                { color: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.15)', label: 'Disponible' },
+                { color: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', label: 'Indisponible' },
+                { color: '#c9883a', border: '1px solid #c9883a', label: 'Sélectionné' },
+              ].map(({ color, border, label }) => (
+                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div className="book-legend-dot" style={{ background: color, border }} />
+                  <span style={{ fontSize: 11, color: '#64748b' }}>{label}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Formulaire de réservation */}
-          <div>
+          {/* Formulaire / placeholder */}
+          <div className="book-fadein" style={{ animationDelay: '0.1s' }}>
             {selectedDates.checkIn && selectedDates.checkOut ? (
               <BookingForm
                 selectedDates={selectedDates}
                 priceInfo={priceInfo}
                 calculating={calculating}
                 onSubmit={handleBooking}
-                onClear={() => {
-                  setSelectedDates({ checkIn: null, checkOut: null })
-                  setPriceInfo(null)
-                }}
+                onClear={() => { setSelectedDates({ checkIn: null, checkOut: null }); setPriceInfo(null) }}
               />
             ) : (
-              <div className="card flex flex-col items-center justify-center text-center py-12">
-                <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
-                  <span className="text-3xl">📅</span>
+              <div className="book-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', minHeight: 280 }}>
+                <div style={{ width: 64, height: 64, background: 'rgba(201,136,58,0.08)', border: '1px solid rgba(201,136,58,0.15)', borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, marginBottom: 16 }}>
+                  📅
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Choisissez vos dates
-                </h3>
-                <p className="text-gray-500 text-sm">
+                <h3 style={{ fontSize: 16, fontWeight: 800, color: '#f5f0ea', marginBottom: 8 }}>Choisissez vos dates</h3>
+                <p style={{ fontSize: 14, color: '#64748b', lineHeight: 1.6 }}>
                   Cliquez d'abord sur votre date d'arrivée, puis sur votre date de départ.
                 </p>
-                <div className="mt-4 flex items-center gap-4 text-xs text-gray-400">
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 rounded-full bg-white border border-gray-300" />
-                    <span>Disponible</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 rounded-full bg-red-100" />
-                    <span>Indisponible</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 rounded-full bg-blue-600" />
-                    <span>Sélectionné</span>
-                  </div>
-                </div>
               </div>
             )}
           </div>

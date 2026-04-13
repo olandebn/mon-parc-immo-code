@@ -8,6 +8,7 @@ import HomePage from './pages/HomePage'
 import PropertyPage from './pages/PropertyPage'
 import LoginPage from './pages/LoginPage'
 import InvitationPage from './pages/InvitationPage'
+import SetupAdminPage from './pages/SetupAdminPage'
 
 // Pages client (authentifié)
 import BookingPage from './pages/BookingPage'
@@ -29,9 +30,17 @@ import AdminUsers from './pages/admin/AdminUsers'
 // Redirige selon le rôle dès qu'on est connecté
 function SmartHome() {
   const { currentUser, isAdmin, loading } = useAuth()
+
+  // AuthProvider bloque le rendu tant que loading est true,
+  // donc ce cas ne devrait pas arriver — sécurité supplémentaire
   if (loading) return null
-  if (currentUser && isAdmin)   return <Navigate to="/admin" replace />
-  if (currentUser && !isAdmin)  return <Navigate to="/mes-reservations" replace />
+
+  // Seul le gérant est redirigé vers son dashboard —
+  // un voyageur connecté peut tout à fait voir la page d'accueil
+  if (currentUser && isAdmin) {
+    return <Navigate to="/admin" replace />
+  }
+
   return <HomePage />
 }
 
@@ -119,6 +128,9 @@ function App() {
               <AdminUsers />
             </ProtectedRoute>
           } />
+
+          {/* Setup — passer son compte en mode Gérant */}
+          <Route path="/setup" element={<SetupAdminPage />} />
 
           {/* Redirection par défaut */}
           <Route path="*" element={<Navigate to="/" replace />} />

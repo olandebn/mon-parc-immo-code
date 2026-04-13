@@ -2,7 +2,73 @@ import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { messageService, reservationService } from '../../services/api'
 import MessageThread from '../../components/messages/MessageThread'
-import { MessageSquare, User, Clock } from 'lucide-react'
+import { MessageSquare, User } from 'lucide-react'
+
+/* ── CSS ──────────────────────────────────────────────────────────────────── */
+const CSS = `
+  .msg-root { min-height: 100vh; background: #080706; color: #f5f0ea; font-family: 'Inter', -apple-system, sans-serif; }
+
+  @keyframes msg-fadein { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  .msg-fadein { animation: msg-fadein 0.4s ease both; }
+
+  .msg-header {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(8,7,6,0.94);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  .msg-panel {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 16px; overflow: hidden;
+    height: calc(100vh - 140px);
+    display: flex; flex-direction: column;
+  }
+
+  .msg-thread-btn {
+    width: 100%; text-align: left;
+    padding: 12px 14px; border: none; background: transparent;
+    border-radius: 10px; cursor: pointer;
+    transition: background 0.15s; border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .msg-thread-btn:last-child { border-bottom: none; }
+  .msg-thread-btn:hover { background: rgba(255,255,255,0.05); }
+  .msg-thread-btn.active { background: rgba(201,136,58,0.1); }
+
+  .msg-unread-badge {
+    background: #e0a84f; color: #080706;
+    font-size: 10px; font-weight: 800;
+    min-width: 18px; height: 18px; padding: 0 5px;
+    border-radius: 99px; display: flex; align-items: center; justify-content: center;
+  }
+
+  .msg-avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: rgba(201,136,58,0.12);
+    border: 1px solid rgba(201,136,58,0.2);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .msg-spinner {
+    width: 32px; height: 32px;
+    border: 3px solid rgba(201,136,58,0.2);
+    border-top-color: #c9883a;
+    border-radius: 50%;
+    animation: msg-spin 0.8s linear infinite;
+  }
+  @keyframes msg-spin { to { transform: rotate(360deg); } }
+`
+
+function injectCSS() {
+  if (document.getElementById('msg-css')) return
+  const s = document.createElement('style')
+  s.id = 'msg-css'
+  s.textContent = CSS
+  document.head.appendChild(s)
+}
 
 export default function AdminMessages() {
   const [threads, setThreads] = useState([])
@@ -11,6 +77,7 @@ export default function AdminMessages() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    injectCSS()
     Promise.all([
       messageService.getAllThreads(),
       reservationService.getAllReservations(),
@@ -18,7 +85,6 @@ export default function AdminMessages() {
       .then(([threadsRes, resRes]) => {
         setThreads(threadsRes.data)
         setReservations(resRes.data)
-        // Sélectionner le premier fil avec des messages non lus
         if (threadsRes.data.length > 0) {
           setSelectedReservationId(threadsRes.data[0].reservationId)
         }
@@ -27,126 +93,106 @@ export default function AdminMessages() {
       .finally(() => setLoading(false))
   }, [])
 
-  const getReservationInfo = (reservationId) => {
-    return reservations.find(r => r.id === reservationId)
-  }
-
-  const unreadCount = (reservationId) => {
-    const thread = threads.find(t => t.reservationId === reservationId)
-    return thread?.unreadCount || 0
-  }
-
-  // Toutes les réservations avec messages
-  const allReservationsWithMessages = [
-    ...threads.map(t => t.reservationId),
-    ...(selectedReservationId && !threads.find(t => t.reservationId === selectedReservationId)
-      ? [selectedReservationId] : [])
-  ]
+  const getReservation = (id) => reservations.find(r => r.id === id)
+  const unreadCount = (id) => threads.find(t => t.reservationId === id)?.unreadCount || 0
+  const totalUnread = threads.reduce((s, t) => s + (t.unreadCount || 0), 0)
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center gap-3">
-          <Link to="/admin" className="text-gray-400 hover:text-gray-600">← Dashboard</Link>
-          <h1 className="text-xl font-bold text-gray-900">Messages</h1>
-          {threads.length > 0 && (
-            <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
-              {threads.reduce((sum, t) => sum + (t.unreadCount || 0), 0)} non lus
+    <div className="msg-root">
+
+      {/* ── Header ── */}
+      <header className="msg-header">
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', height: 62, display: 'flex', alignItems: 'center', gap: 14 }}>
+          <Link to="/admin" style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', textDecoration: 'none' }}
+            onMouseEnter={e => e.currentTarget.style.color = '#e0a84f'}
+            onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.35)'}
+          >← Dashboard</Link>
+          <span style={{ color: 'rgba(255,255,255,0.1)' }}>|</span>
+          <span style={{ fontSize: 17, fontWeight: 800, letterSpacing: '-0.02em' }}>Messages</span>
+          {totalUnread > 0 && (
+            <span style={{ background: '#e0a84f', color: '#080706', fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 99 }}>
+              {totalUnread} non lu{totalUnread > 1 ? 's' : ''}
             </span>
           )}
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-6">
+      <main style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 24px 32px' }}>
         {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
+            <div className="msg-spinner" />
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Liste des conversations */}
-            <div className="lg:col-span-1">
-              <div className="card">
-                <h2 className="text-sm font-semibold text-gray-500 uppercase mb-4">
-                  Conversations
-                </h2>
+          <div className="msg-fadein" style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 16 }}>
 
+            {/* ── Colonne gauche : liste conversations ── */}
+            <div className="msg-panel">
+              <div style={{ padding: '16px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                  Conversations
+                </p>
+              </div>
+              <div style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
                 {reservations.length === 0 ? (
-                  <p className="text-gray-400 text-sm text-center py-4">
-                    Aucune réservation
-                  </p>
+                  <p style={{ textAlign: 'center', padding: '24px 0', color: '#475569', fontSize: 14 }}>Aucune réservation</p>
                 ) : (
-                  <div className="space-y-2">
-                    {reservations.slice(0, 20).map((reservation) => {
-                      const unread = unreadCount(reservation.id)
-                      const isSelected = selectedReservationId === reservation.id
-                      return (
-                        <button
-                          key={reservation.id}
-                          onClick={() => setSelectedReservationId(reservation.id)}
-                          className={`w-full text-left p-3 rounded-lg transition-colors ${
-                            isSelected
-                              ? 'bg-blue-50 border border-blue-200'
-                              : 'hover:bg-gray-50 border border-transparent'
-                          }`}
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                                <User className="w-4 h-4 text-gray-400" />
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-gray-900">
-                                  {reservation.clientName}
-                                </p>
-                                <p className="text-xs text-gray-400">
-                                  {reservation.checkInDate}
-                                </p>
-                              </div>
-                            </div>
-                            {unread > 0 && (
-                              <span className="bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0">
-                                {unread}
-                              </span>
-                            )}
+                  reservations.slice(0, 20).map(reservation => {
+                    const unread = unreadCount(reservation.id)
+                    const isSelected = selectedReservationId === reservation.id
+                    return (
+                      <button
+                        key={reservation.id}
+                        onClick={() => setSelectedReservationId(reservation.id)}
+                        className={`msg-thread-btn ${isSelected ? 'active' : ''}`}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div className="msg-avatar">
+                            <User size={15} style={{ color: '#c9883a' }} />
                           </div>
-                        </button>
-                      )
-                    })}
-                  </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ fontSize: 13, fontWeight: 700, color: isSelected ? '#e0a84f' : '#f5f0ea', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {reservation.clientName}
+                            </p>
+                            <p style={{ fontSize: 11, color: '#64748b' }}>{reservation.checkInDate}</p>
+                          </div>
+                          {unread > 0 && <span className="msg-unread-badge">{unread}</span>}
+                        </div>
+                      </button>
+                    )
+                  })
                 )}
               </div>
             </div>
 
-            {/* Fil de messages */}
-            <div className="lg:col-span-2">
+            {/* ── Colonne droite : fil de messages ── */}
+            <div className="msg-panel">
               {selectedReservationId ? (
-                <div className="card">
+                <>
                   {(() => {
-                    const reservation = getReservationInfo(selectedReservationId)
-                    return reservation ? (
-                      <div className="mb-4 pb-3 border-b border-gray-100">
-                        <h3 className="font-semibold text-gray-900">{reservation.clientName}</h3>
-                        <p className="text-sm text-gray-500">
-                          {reservation.checkInDate} → {reservation.checkOutDate} •{' '}
-                          {reservation.status === 'CONFIRMED' ? '✅ Confirmée' :
-                           reservation.status === 'PENDING' ? '⏳ En attente' : reservation.status}
+                    const res = getReservation(selectedReservationId)
+                    return res ? (
+                      <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                        <p style={{ fontWeight: 800, color: '#f5f0ea', fontSize: 15, marginBottom: 3 }}>{res.clientName}</p>
+                        <p style={{ fontSize: 12, color: '#64748b' }}>
+                          {res.checkInDate} → {res.checkOutDate} ·{' '}
+                          {res.status === 'CONFIRMED' ? '✅ Confirmée' : res.status === 'PENDING' ? '⏳ En attente' : res.status}
                         </p>
                       </div>
                     ) : null
                   })()}
-                  <MessageThread
-                    reservationId={selectedReservationId}
-                    onMessageSent={() => {
-                      // Rafraîchir les threads non lus
-                      messageService.getAllThreads().then(res => setThreads(res.data))
-                    }}
-                  />
-                </div>
+                  <div style={{ flex: 1, overflow: 'hidden', padding: '16px 20px' }}>
+                    <MessageThread
+                      reservationId={selectedReservationId}
+                      onMessageSent={() => {
+                        messageService.getAllThreads().then(res => setThreads(res.data))
+                      }}
+                    />
+                  </div>
+                </>
               ) : (
-                <div className="card flex flex-col items-center justify-center py-16 text-center">
-                  <MessageSquare className="w-12 h-12 text-gray-200 mb-4" />
-                  <p className="text-gray-500">Sélectionnez une conversation</p>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, color: '#475569' }}>
+                  <MessageSquare size={40} style={{ color: 'rgba(255,255,255,0.08)' }} />
+                  <p style={{ fontSize: 14 }}>Sélectionnez une conversation</p>
                 </div>
               )}
             </div>

@@ -8,8 +8,18 @@ export default function ProtectedRoute({ children, requireAdmin = false }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+      <div style={{
+        minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: '#080706',
+      }}>
+        <div style={{
+          width: 44, height: 44,
+          border: '3px solid rgba(201,136,58,0.2)',
+          borderTopColor: '#c9883a',
+          borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite',
+        }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     )
   }
@@ -19,7 +29,8 @@ export default function ProtectedRoute({ children, requireAdmin = false }) {
   }
 
   if (requireAdmin && !isAdmin) {
-    return <Navigate to="/" replace />
+    // Un voyageur connecté qui tente d'accéder à /admin → ses réservations
+    return <Navigate to="/mes-reservations" replace />
   }
 
   return children

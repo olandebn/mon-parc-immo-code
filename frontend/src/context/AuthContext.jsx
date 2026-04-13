@@ -11,11 +11,13 @@ import api from '../services/api'
 
 const AuthContext = createContext(null)
 
+const ROLE_KEY = 'mpi_role' // clé localStorage pour le rôle mis en cache
+
 export function AuthProvider({ children }) {
-  const [currentUser, setCurrentUser] = useState(null)
-  const [userProfile, setUserProfile] = useState(null)
-  const [isAdmin, setIsAdmin] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [currentUser, setCurrentUser]   = useState(null)
+  const [userProfile, setUserProfile]   = useState(null)
+  const [isAdmin,     setIsAdmin]       = useState(false)
+  const [loading,     setLoading]       = useState(true)
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -26,26 +28,32 @@ export function AuthProvider({ children }) {
           const token = await firebaseUser.getIdToken()
           api.defaults.headers.common['Authorization'] = `Bearer ${token}`
 
-          // Charger le profil — peut ne pas encore exister juste après l'inscription
+          // ── 1. Essayer de charger le profil depuis le backend ──────────────
           try {
             const profileResponse = await api.get('/users/me')
             const profile = profileResponse.data
             setUserProfile(profile)
-            // isAdmin = rôle ADMIN dans Firestore OU custom claim Firebase
-            const tokenResult = await firebaseUser.getIdTokenResult()
-            setIsAdmin(profile?.role === 'ADMIN' || !!tokenResult.claims.admin)
-          } catch (profileError) {
-            // Profil pas encore créé (inscription en cours) — pas bloquant
+
+            const admin = profile?.role === 'ADMIN'
+            setIsAdmin(admin)
+            // Mise en cache du rôle — résiste aux redémarrages / backend down
+            localStorage.setItem(ROLE_KEY, profile?.role || 'CLIENT')
+
+          } catch {
+            // ── 2. Backend down ou profil inexistant → on utilise le cache ──
+            const cached = localStorage.getItem(ROLE_KEY)
+            setIsAdmin(cached === 'ADMIN')
             setUserProfile(null)
-            setIsAdmin(false)
           }
+
         } catch (error) {
-          console.error('Erreur lors du chargement du profil:', error)
+          console.error('Erreur auth :', error)
         }
       } else {
         delete api.defaults.headers.common['Authorization']
         setUserProfile(null)
         setIsAdmin(false)
+        localStorage.removeItem(ROLE_KEY)
       }
 
       setLoading(false)
@@ -61,43 +69,45 @@ export function AuthProvider({ children }) {
 
   // Inscription publique
   const register = async (email, password, firstName, lastName, role = 'CLIENT') => {
-    // 1. Créer le compte Firebase Auth
     const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-
-    // 2. Obtenir le token immédiatement
     const token = await userCredential.user.getIdToken()
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`
 
-    // 3. Tenter de créer le profil Firestore via le backend (avec le rôle choisi)
-    //    Si le backend est indisponible, on continue quand même
+    // Mise en cache immédiate du rôle choisi
+    localStorage.setItem(ROLE_KEY, role)
+
     try {
       await api.post('/auth/register', { firstName, lastName, email, role }, {
         headers: { Authorization: `Bearer ${token}` }
       })
     } catch (backendErr) {
-      console.warn('Création de profil backend échouée (sera retenté) :', backendErr?.response?.status, backendErr?.message)
+      console.warn('Profil backend non créé (sera retenté) :', backendErr?.message)
     }
 
     return userCredential
   }
 
-  // Déconnexion
   const logout = async () => {
+    localStorage.removeItem(ROLE_KEY)
     await signOut(auth)
   }
 
-  // Mot de passe oublié
-  const resetPassword = async (email) => {
-    return sendPasswordResetEmail(auth, email)
-  }
+  const resetPassword = (email) => sendPasswordResetEmail(auth, email)
 
-  // Rafraîchir le token Firebase
   const refreshToken = async () => {
     if (currentUser) {
       const token = await currentUser.getIdToken(true)
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`
       return token
     }
+  }
+
+  // Passer son propre compte en mode Gérant (ADMIN)
+  const becomeAdmin = async () => {
+    await api.post('/users/me/become-admin')
+    setIsAdmin(true)
+    localStorage.setItem(ROLE_KEY, 'ADMIN')
+    setUserProfile(prev => prev ? { ...prev, role: 'ADMIN' } : prev)
   }
 
   const value = {
@@ -110,6 +120,7 @@ export function AuthProvider({ children }) {
     logout,
     resetPassword,
     refreshToken,
+    becomeAdmin,
   }
 
   return (

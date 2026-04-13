@@ -4,6 +4,125 @@ import { propertyService } from '../../services/api'
 import { Plus, Edit2, Trash2, Home, MapPin, Users, Maximize2, Image, Save, X } from 'lucide-react'
 import { toast } from 'react-toastify'
 
+/* ── CSS ──────────────────────────────────────────────────────────────────── */
+const CSS = `
+  .prp-root { min-height: 100vh; background: #080706; color: #f5f0ea; font-family: 'Inter', -apple-system, sans-serif; }
+
+  @keyframes prp-fadein { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+  .prp-fadein { animation: prp-fadein 0.4s ease both; }
+
+  .prp-header {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(8,7,6,0.94);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  .prp-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .prp-form-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(201,136,58,0.2);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 24px;
+  }
+
+  .prp-input {
+    width: 100%; padding: 10px 14px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    font-size: 14px;
+    color: #f5f0ea;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+  }
+  .prp-input::placeholder { color: rgba(255,255,255,0.25); }
+  .prp-input:focus { border-color: rgba(201,136,58,0.5); }
+  .prp-input option { background: #1a1814; color: #f5f0ea; }
+
+  .prp-label { display: block; font-size: 12px; font-weight: 600; color: #94a3b8; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .prp-btn-primary {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 10px 20px; background: linear-gradient(135deg, #c9883a, #e0a84f);
+    color: #080706; border: none; border-radius: 10px;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .prp-btn-primary:hover { opacity: 0.88; }
+  .prp-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .prp-btn-ghost {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 14px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px; color: #94a3b8;
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  .prp-btn-ghost:hover { background: rgba(255,255,255,0.1); color: #f5f0ea; }
+
+  .prp-btn-danger {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 14px;
+    background: rgba(239,68,68,0.08);
+    border: 1px solid rgba(239,68,68,0.2);
+    border-radius: 8px; color: #f87171;
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    transition: background 0.2s;
+  }
+  .prp-btn-danger:hover { background: rgba(239,68,68,0.15); }
+
+  .prp-btn-amber {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 12px;
+    background: rgba(201,136,58,0.08);
+    border: 1px solid rgba(201,136,58,0.2);
+    border-radius: 8px; color: #e0a84f;
+    font-size: 12px; font-weight: 500; cursor: pointer;
+    transition: background 0.2s;
+  }
+  .prp-btn-amber:hover { background: rgba(201,136,58,0.16); }
+
+  .prp-section-title {
+    font-size: 11px; font-weight: 700; color: #c9883a;
+    text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 14px;
+  }
+
+  .prp-chip {
+    font-size: 12px; color: #64748b;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+
+  .prp-spinner {
+    width: 36px; height: 36px;
+    border: 3px solid rgba(201,136,58,0.2);
+    border-top-color: #c9883a;
+    border-radius: 50%;
+    animation: prp-spin 0.8s linear infinite;
+  }
+  @keyframes prp-spin { to { transform: rotate(360deg); } }
+`
+
+function injectCSS() {
+  if (document.getElementById('prp-css')) return
+  const s = document.createElement('style')
+  s.id = 'prp-css'
+  s.textContent = CSS
+  document.head.appendChild(s)
+}
+
 const emptyForm = {
   name: '', description: '', address: '', city: '',
   country: 'France', surfaceArea: '', numberOfRooms: '',
@@ -20,9 +139,9 @@ export default function AdminProperties() {
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
   const [photoUrl, setPhotoUrl] = useState('')
-  const [addingPhoto, setAddingPhoto] = useState(null) // 'main' | 'surrounding'
+  const [addingPhoto, setAddingPhoto] = useState(null)
 
-  useEffect(() => { loadProperties() }, [])
+  useEffect(() => { injectCSS(); loadProperties() }, [])
 
   const loadProperties = async () => {
     try {
@@ -100,121 +219,120 @@ export default function AdminProperties() {
 
   const F = ({ label, children }) => (
     <div>
-      <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: '#6b7280', marginBottom: 5 }}>{label}</label>
+      <label className="prp-label">{label}</label>
       {children}
     </div>
   )
 
-  const inputStyle = {
-    width: '100%', padding: '9px 12px',
-    background: '#f9fafb', border: '1px solid #e5e7eb',
-    borderRadius: 8, fontSize: 14, color: '#111827',
-    outline: 'none', fontFamily: 'inherit',
-  }
-
   return (
-    <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: 'Inter, sans-serif' }}>
-      {/* Header */}
-      <header style={{ background: '#fff', borderBottom: '1px solid #e5e7eb', position: 'sticky', top: 0, zIndex: 10 }}>
-        <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Link to="/admin" style={{ fontSize: 13, color: '#9ca3af', textDecoration: 'none' }}>← Dashboard</Link>
-            <span style={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>Mes biens</span>
-            <span style={{ fontSize: 13, color: '#9ca3af' }}>({properties.length})</span>
+    <div className="prp-root">
+
+      {/* ── Header ── */}
+      <header className="prp-header">
+        <div style={{ maxWidth: 1000, margin: '0 auto', padding: '0 24px', height: 62, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <Link to="/admin" style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', textDecoration: 'none' }}
+              onMouseEnter={e => e.currentTarget.style.color = '#e0a84f'}
+              onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.35)'}
+            >← Dashboard</Link>
+            <span style={{ color: 'rgba(255,255,255,0.1)' }}>|</span>
+            <span style={{ fontSize: 17, fontWeight: 800, letterSpacing: '-0.02em' }}>Mes biens</span>
+            <span style={{ fontSize: 13, color: '#475569' }}>({properties.length})</span>
           </div>
           <button
             onClick={() => { setForm(emptyForm); setEditingId(null); setShowForm(true); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: '#4f46e5', color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
-            <Plus style={{ width: 15, height: 15 }} /> Ajouter un bien
+            className="prp-btn-primary"
+          >
+            <Plus size={15} /> Ajouter un bien
           </button>
         </div>
       </header>
 
-      <main style={{ maxWidth: 960, margin: '0 auto', padding: '24px' }}>
+      <main style={{ maxWidth: 1000, margin: '0 auto', padding: '36px 24px 80px' }}>
 
-        {/* ─── Formulaire ─── */}
+        {/* ── Formulaire ── */}
         {showForm && (
-          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 16, padding: 28, marginBottom: 28, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
+          <div className="prp-form-card prp-fadein">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-              <h2 style={{ fontSize: 17, fontWeight: 700, color: '#111827' }}>
+              <h2 style={{ fontSize: 16, fontWeight: 800, color: '#f5f0ea', letterSpacing: '-0.02em' }}>
                 {editingId ? '✏️ Modifier le bien' : '🏠 Nouveau bien'}
               </h2>
-              <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af' }}>
-                <X style={{ width: 20, height: 20 }} />
+              <button onClick={() => setShowForm(false)} className="prp-btn-ghost" style={{ padding: '6px 10px' }}>
+                <X size={16} />
               </button>
             </div>
 
             <form onSubmit={handleSave}>
               {/* Infos générales */}
-              <p style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#4f46e5', marginBottom: 14 }}>Informations générales</p>
+              <p className="prp-section-title">✦ Informations générales</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 20 }}>
                 <F label="Nom du bien *">
-                  <input style={inputStyle} value={form.name} required onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Villa les Pins, Mas Provençal..." />
+                  <input className="prp-input" value={form.name} required onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Villa les Pins, Mas Provençal…" />
                 </F>
                 <F label="Ville *">
-                  <input style={inputStyle} value={form.city} required onChange={e => setForm({ ...form, city: e.target.value })} placeholder="Nice" />
+                  <input className="prp-input" value={form.city} required onChange={e => setForm({ ...form, city: e.target.value })} placeholder="Nice" />
                 </F>
                 <F label="Adresse">
-                  <input style={inputStyle} value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} placeholder="12 avenue des Fleurs" />
+                  <input className="prp-input" value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} placeholder="12 avenue des Fleurs" />
                 </F>
                 <F label="Pays">
-                  <input style={inputStyle} value={form.country} onChange={e => setForm({ ...form, country: e.target.value })} placeholder="France" />
+                  <input className="prp-input" value={form.country} onChange={e => setForm({ ...form, country: e.target.value })} placeholder="France" />
                 </F>
               </div>
               <div style={{ marginBottom: 20 }}>
                 <F label="Description">
-                  <textarea style={{ ...inputStyle, minHeight: 90, resize: 'vertical' }} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Décrivez votre bien : situation, caractéristiques, ambiance..." />
+                  <textarea className="prp-input" style={{ minHeight: 90, resize: 'vertical' }} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Décrivez votre bien : situation, caractéristiques, ambiance…" />
                 </F>
               </div>
 
               {/* Capacité */}
-              <p style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#4f46e5', marginBottom: 14 }}>Capacité & surface</p>
+              <p className="prp-section-title">✦ Capacité & surface</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 20 }}>
                 <F label="Voyageurs max">
-                  <input style={inputStyle} type="number" min="1" value={form.maxGuests} onChange={e => setForm({ ...form, maxGuests: e.target.value })} placeholder="6" />
+                  <input className="prp-input" type="number" min="1" value={form.maxGuests} onChange={e => setForm({ ...form, maxGuests: e.target.value })} placeholder="6" />
                 </F>
                 <F label="Nombre de pièces">
-                  <input style={inputStyle} type="number" min="1" value={form.numberOfRooms} onChange={e => setForm({ ...form, numberOfRooms: e.target.value })} placeholder="4" />
+                  <input className="prp-input" type="number" min="1" value={form.numberOfRooms} onChange={e => setForm({ ...form, numberOfRooms: e.target.value })} placeholder="4" />
                 </F>
                 <F label="Surface (m²)">
-                  <input style={inputStyle} type="number" min="1" value={form.surfaceArea} onChange={e => setForm({ ...form, surfaceArea: e.target.value })} placeholder="85" />
+                  <input className="prp-input" type="number" min="1" value={form.surfaceArea} onChange={e => setForm({ ...form, surfaceArea: e.target.value })} placeholder="85" />
                 </F>
               </div>
 
               {/* Check-in / Check-out */}
-              <p style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#4f46e5', marginBottom: 14 }}>Arrivée & départ</p>
+              <p className="prp-section-title">✦ Arrivée & départ</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 20 }}>
                 <F label="Heure d'arrivée (check-in)">
-                  <input style={inputStyle} type="time" value={form.checkInTime} onChange={e => setForm({ ...form, checkInTime: e.target.value })} />
+                  <input className="prp-input" type="time" value={form.checkInTime} onChange={e => setForm({ ...form, checkInTime: e.target.value })} />
                 </F>
                 <F label="Heure de départ (check-out)">
-                  <input style={inputStyle} type="time" value={form.checkOutTime} onChange={e => setForm({ ...form, checkOutTime: e.target.value })} />
+                  <input className="prp-input" type="time" value={form.checkOutTime} onChange={e => setForm({ ...form, checkOutTime: e.target.value })} />
                 </F>
                 <F label="Wi-Fi — Nom du réseau">
-                  <input style={inputStyle} value={form.wifiName} onChange={e => setForm({ ...form, wifiName: e.target.value })} placeholder="MonWifi_5G" />
+                  <input className="prp-input" value={form.wifiName} onChange={e => setForm({ ...form, wifiName: e.target.value })} placeholder="MonWifi_5G" />
                 </F>
                 <F label="Wi-Fi — Mot de passe">
-                  <input style={inputStyle} value={form.wifiPassword} onChange={e => setForm({ ...form, wifiPassword: e.target.value })} placeholder="MotDePasse123" />
+                  <input className="prp-input" value={form.wifiPassword} onChange={e => setForm({ ...form, wifiPassword: e.target.value })} placeholder="MotDePasse123" />
                 </F>
               </div>
 
               {/* Instructions & règles */}
-              <p style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#4f46e5', marginBottom: 14 }}>Instructions & règles</p>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 24 }}>
+              <p className="prp-section-title">✦ Instructions & règles</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 28 }}>
                 <F label="Instructions d'arrivée">
-                  <textarea style={{ ...inputStyle, minHeight: 100, resize: 'vertical' }} value={form.checkInInstructions} onChange={e => setForm({ ...form, checkInInstructions: e.target.value })} placeholder="Code de la porte : 1234, clés dans la boîte..." />
+                  <textarea className="prp-input" style={{ minHeight: 100, resize: 'vertical' }} value={form.checkInInstructions} onChange={e => setForm({ ...form, checkInInstructions: e.target.value })} placeholder="Code de la porte : 1234, clés dans la boîte…" />
                 </F>
                 <F label="Règlement de la maison">
-                  <textarea style={{ ...inputStyle, minHeight: 100, resize: 'vertical' }} value={form.houseRules} onChange={e => setForm({ ...form, houseRules: e.target.value })} placeholder="Non fumeur, pas d'animaux, déchets à sortir..." />
+                  <textarea className="prp-input" style={{ minHeight: 100, resize: 'vertical' }} value={form.houseRules} onChange={e => setForm({ ...form, houseRules: e.target.value })} placeholder="Non fumeur, pas d'animaux, déchets à sortir…" />
                 </F>
               </div>
 
               <div style={{ display: 'flex', gap: 10 }}>
-                <button type="submit" disabled={saving} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 20px', background: '#4f46e5', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize: 14 }}>
-                  <Save style={{ width: 15, height: 15 }} />
-                  {saving ? 'Enregistrement...' : editingId ? 'Mettre à jour' : 'Créer le bien'}
+                <button type="submit" disabled={saving} className="prp-btn-primary">
+                  <Save size={15} />
+                  {saving ? 'Enregistrement…' : editingId ? 'Mettre à jour' : 'Créer le bien'}
                 </button>
-                <button type="button" onClick={() => setShowForm(false)} style={{ padding: '10px 20px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize: 14 }}>
+                <button type="button" onClick={() => setShowForm(false)} className="prp-btn-ghost">
                   Annuler
                 </button>
               </div>
@@ -222,96 +340,96 @@ export default function AdminProperties() {
           </div>
         )}
 
-        {/* ─── Liste des biens ─── */}
+        {/* ── Liste des biens ── */}
         {loading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
-            <div style={{ width: 32, height: 32, border: '3px solid #e5e7eb', borderTopColor: '#4f46e5', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
+            <div className="prp-spinner" />
           </div>
         ) : properties.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '80px 0' }}>
-            <div style={{ width: 72, height: 72, background: '#f0f0ff', borderRadius: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-              <Home style={{ width: 36, height: 36, color: '#a5b4fc' }} />
+          <div className="prp-fadein" style={{ textAlign: 'center', padding: '80px 0' }}>
+            <div style={{ width: 72, height: 72, background: 'rgba(201,136,58,0.08)', border: '1px solid rgba(201,136,58,0.2)', borderRadius: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+              <Home size={36} style={{ color: 'rgba(201,136,58,0.5)' }} />
             </div>
-            <h3 style={{ fontSize: 18, fontWeight: 600, color: '#374151', marginBottom: 8 }}>Aucun bien ajouté</h3>
-            <p style={{ color: '#9ca3af', marginBottom: 20 }}>Créez votre premier logement pour commencer à gérer vos réservations.</p>
-            <button onClick={() => setShowForm(true)} style={{ padding: '10px 20px', background: '#4f46e5', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer' }}>
-              + Ajouter un bien
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: '#f5f0ea', marginBottom: 8 }}>Aucun bien ajouté</h3>
+            <p style={{ color: '#475569', marginBottom: 24, fontSize: 14 }}>Créez votre premier logement pour commencer à gérer vos réservations.</p>
+            <button onClick={() => setShowForm(true)} className="prp-btn-primary">
+              <Plus size={15} /> Ajouter un bien
             </button>
           </div>
         ) : (
           <div style={{ display: 'grid', gap: 16 }}>
-            {properties.map(p => (
-              <div key={p.id} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                <div style={{ display: 'flex', gap: 0 }}>
+            {properties.map((p, i) => (
+              <div key={p.id} className={`prp-card prp-fadein`} style={{ animationDelay: `${i * 0.05}s` }}>
+                <div style={{ display: 'flex' }}>
                   {/* Photo principale */}
-                  <div style={{ width: 160, flexShrink: 0, background: '#f3f4f6', position: 'relative' }}>
+                  <div style={{ width: 160, flexShrink: 0, background: 'rgba(255,255,255,0.03)', position: 'relative', minHeight: 130 }}>
                     {p.mainPhotoUrls?.[0] ? (
                       <img src={p.mainPhotoUrls[0]} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
-                      <div style={{ width: '100%', height: '100%', minHeight: 120, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Home style={{ width: 40, height: 40, color: '#d1d5db' }} />
+                      <div style={{ width: '100%', height: '100%', minHeight: 130, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Home size={40} style={{ color: 'rgba(255,255,255,0.1)' }} />
                       </div>
                     )}
-                    <div style={{ position: 'absolute', bottom: 6, left: 6, fontSize: 11, background: 'rgba(0,0,0,0.6)', color: '#fff', padding: '2px 7px', borderRadius: 99 }}>
+                    <div style={{ position: 'absolute', bottom: 6, left: 6, fontSize: 11, background: 'rgba(0,0,0,0.7)', color: 'rgba(255,255,255,0.7)', padding: '2px 8px', borderRadius: 99 }}>
                       {p.mainPhotoUrls?.length || 0} photo{(p.mainPhotoUrls?.length || 0) > 1 ? 's' : ''}
                     </div>
                   </div>
 
                   {/* Infos */}
-                  <div style={{ flex: 1, padding: '18px 20px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                  <div style={{ flex: 1, padding: '20px 22px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                       <div>
-                        <h3 style={{ fontSize: 16, fontWeight: 700, color: '#111827', marginBottom: 3 }}>{p.name}</h3>
+                        <h3 style={{ fontSize: 16, fontWeight: 800, color: '#f5f0ea', marginBottom: 4, letterSpacing: '-0.02em' }}>{p.name}</h3>
                         {p.city && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: '#6b7280' }}>
-                            <MapPin style={{ width: 12, height: 12 }} />
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: '#64748b' }}>
+                            <MapPin size={12} />
                             {p.city}{p.country ? `, ${p.country}` : ''}
                           </div>
                         )}
                       </div>
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        <button onClick={() => handleEdit(p)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: '#f0f0ff', color: '#4f46e5', border: '1px solid #e0e7ff', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
-                          <Edit2 style={{ width: 13, height: 13 }} /> Modifier
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button onClick={() => handleEdit(p)} className="prp-btn-ghost">
+                          <Edit2 size={13} /> Modifier
                         </button>
-                        <button onClick={() => handleDelete(p.id, p.name)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: '#fff5f5', color: '#ef4444', border: '1px solid #fecaca', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
-                          <Trash2 style={{ width: 13, height: 13 }} /> Supprimer
+                        <button onClick={() => handleDelete(p.id, p.name)} className="prp-btn-danger">
+                          <Trash2 size={13} /> Supprimer
                         </button>
                       </div>
                     </div>
 
                     {/* Specs */}
-                    <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
-                      {p.maxGuests > 0 && <span style={{ fontSize: 12, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 4 }}><Users style={{ width: 12, height: 12 }} />{p.maxGuests} pers.</span>}
-                      {p.numberOfRooms > 0 && <span style={{ fontSize: 12, color: '#6b7280' }}>🛏 {p.numberOfRooms} pièces</span>}
-                      {p.surfaceArea > 0 && <span style={{ fontSize: 12, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 4 }}><Maximize2 style={{ width: 12, height: 12 }} />{p.surfaceArea} m²</span>}
-                      {p.checkInTime && <span style={{ fontSize: 12, color: '#6b7280' }}>🔑 Arrivée {p.checkInTime}</span>}
-                      {p.checkOutTime && <span style={{ fontSize: 12, color: '#6b7280' }}>🚪 Départ {p.checkOutTime}</span>}
+                    <div style={{ display: 'flex', gap: 14, marginBottom: 14, flexWrap: 'wrap' }}>
+                      {p.maxGuests > 0 && <span className="prp-chip"><Users size={12} />{p.maxGuests} pers.</span>}
+                      {p.numberOfRooms > 0 && <span className="prp-chip">🛏 {p.numberOfRooms} pièces</span>}
+                      {p.surfaceArea > 0 && <span className="prp-chip"><Maximize2 size={12} />{p.surfaceArea} m²</span>}
+                      {p.checkInTime && <span className="prp-chip">🔑 Arrivée {p.checkInTime}</span>}
+                      {p.checkOutTime && <span className="prp-chip">🚪 Départ {p.checkOutTime}</span>}
                     </div>
 
                     {/* Ajout photos */}
-                    <div style={{ display: 'flex', gap: 8 }}>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                       {addingPhoto === p.id + '-main' ? (
                         <div style={{ display: 'flex', gap: 6, alignItems: 'center', flex: 1 }}>
-                          <input value={photoUrl} onChange={e => setPhotoUrl(e.target.value)} placeholder="URL de la photo principale (ex: https://...)" style={{ ...inputStyle, flex: 1, fontSize: 12, padding: '6px 10px' }} />
-                          <button onClick={() => handleAddPhoto(p.id, 'main')} style={{ padding: '6px 12px', background: '#4f46e5', color: '#fff', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>OK</button>
-                          <button onClick={() => { setAddingPhoto(null); setPhotoUrl('') }} style={{ padding: '6px 10px', background: '#f3f4f6', border: 'none', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>✕</button>
+                          <input value={photoUrl} onChange={e => setPhotoUrl(e.target.value)} placeholder="URL photo principale (https://…)" className="prp-input" style={{ flex: 1, fontSize: 12, padding: '7px 10px' }} />
+                          <button onClick={() => handleAddPhoto(p.id, 'main')} className="prp-btn-amber" style={{ whiteSpace: 'nowrap' }}>OK</button>
+                          <button onClick={() => { setAddingPhoto(null); setPhotoUrl('') }} className="prp-btn-ghost" style={{ padding: '6px 10px' }}>✕</button>
                         </div>
                       ) : addingPhoto === p.id + '-surr' ? (
                         <div style={{ display: 'flex', gap: 6, alignItems: 'center', flex: 1 }}>
-                          <input value={photoUrl} onChange={e => setPhotoUrl(e.target.value)} placeholder="URL photo des environs (ex: https://...)" style={{ ...inputStyle, flex: 1, fontSize: 12, padding: '6px 10px' }} />
-                          <button onClick={() => handleAddPhoto(p.id, 'surrounding')} style={{ padding: '6px 12px', background: '#059669', color: '#fff', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>OK</button>
-                          <button onClick={() => { setAddingPhoto(null); setPhotoUrl('') }} style={{ padding: '6px 10px', background: '#f3f4f6', border: 'none', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>✕</button>
+                          <input value={photoUrl} onChange={e => setPhotoUrl(e.target.value)} placeholder="URL photo des environs (https://…)" className="prp-input" style={{ flex: 1, fontSize: 12, padding: '7px 10px' }} />
+                          <button onClick={() => handleAddPhoto(p.id, 'surrounding')} className="prp-btn-amber" style={{ whiteSpace: 'nowrap' }}>OK</button>
+                          <button onClick={() => { setAddingPhoto(null); setPhotoUrl('') }} className="prp-btn-ghost" style={{ padding: '6px 10px' }}>✕</button>
                         </div>
                       ) : (
                         <>
-                          <button onClick={() => { setAddingPhoto(p.id + '-main'); setPhotoUrl('') }} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', background: '#f0f0ff', color: '#4f46e5', border: '1px solid #e0e7ff', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
-                            <Image style={{ width: 12, height: 12 }} /> + Photo principale
+                          <button onClick={() => { setAddingPhoto(p.id + '-main'); setPhotoUrl('') }} className="prp-btn-amber">
+                            <Image size={12} /> + Photo principale
                           </button>
-                          <button onClick={() => { setAddingPhoto(p.id + '-surr'); setPhotoUrl('') }} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', background: '#f0fdf4', color: '#059669', border: '1px solid #bbf7d0', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
-                            <Image style={{ width: 12, height: 12 }} /> + Photo environs
+                          <button onClick={() => { setAddingPhoto(p.id + '-surr'); setPhotoUrl('') }} className="prp-btn-ghost" style={{ fontSize: 12 }}>
+                            <Image size={12} /> + Photo environs
                           </button>
-                          <Link to={`/biens/${p.id}`} target="_blank" style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', background: '#f8fafc', color: '#6b7280', border: '1px solid #e5e7eb', borderRadius: 6, fontSize: 12, textDecoration: 'none' }}>
-                            👁 Voir la page publique
+                          <Link to={`/biens/${p.id}`} target="_blank" className="prp-btn-ghost" style={{ textDecoration: 'none', fontSize: 12 }}>
+                            👁 Voir page publique
                           </Link>
                         </>
                       )}
@@ -323,7 +441,6 @@ export default function AdminProperties() {
           </div>
         )}
       </main>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   )
 }

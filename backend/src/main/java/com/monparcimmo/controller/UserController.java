@@ -80,6 +80,16 @@ public class UserController {
         return ResponseEntity.ok(userService.updateUser(uid, user));
     }
 
+    // AUTHENTIFIÉ - Passer son compte en mode Gérant (ADMIN)
+    @PostMapping("/users/me/become-admin")
+    public ResponseEntity<User> becomeAdmin(Authentication auth) {
+        String uid = (String) auth.getPrincipal();
+        User user = userService.getUserByUid(uid);
+        user.setRole("ADMIN");
+        User updated = userService.updateUser(uid, user);
+        return ResponseEntity.ok(updated);
+    }
+
     // ADMIN - Lister tous les clients
     @GetMapping("/admin/users")
     @PreAuthorize("hasRole('ADMIN')")
