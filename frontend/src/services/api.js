@@ -39,6 +39,9 @@ export const propertyService = {
   deleteProperty: (propertyId) => api.delete(`/admin/properties/${propertyId}`),
   addMainPhoto: (propertyId, url) => api.post(`/admin/properties/${propertyId}/photos/main`, { url }),
   addSurroundingPhoto: (propertyId, url) => api.post(`/admin/properties/${propertyId}/photos/surrounding`, { url }),
+  removeMainPhoto: (propertyId, url) => api.delete(`/admin/properties/${propertyId}/photos/main`, { data: { url } }),
+  removeSurroundingPhoto: (propertyId, url) => api.delete(`/admin/properties/${propertyId}/photos/surrounding`, { data: { url } }),
+  reorderMainPhotos: (propertyId, urls) => api.put(`/admin/properties/${propertyId}/photos/main/reorder`, { urls }),
 }
 
 // ==============================

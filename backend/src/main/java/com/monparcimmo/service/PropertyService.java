@@ -94,4 +94,33 @@ public class PropertyService {
         property.setSurroundingPhotoUrls(photos);
         return updateProperty(propertyId, property);
     }
+
+    // ADMIN - Supprimer une photo principale par URL
+    public Property removeMainPhoto(String propertyId, String url) {
+        Property property = getPropertyById(propertyId);
+        List<String> photos = property.getMainPhotoUrls();
+        if (photos != null) {
+            photos.remove(url);
+            property.setMainPhotoUrls(photos);
+        }
+        return updateProperty(propertyId, property);
+    }
+
+    // ADMIN - Supprimer une photo des alentours par URL
+    public Property removeSurroundingPhoto(String propertyId, String url) {
+        Property property = getPropertyById(propertyId);
+        List<String> photos = property.getSurroundingPhotoUrls();
+        if (photos != null) {
+            photos.remove(url);
+            property.setSurroundingPhotoUrls(photos);
+        }
+        return updateProperty(propertyId, property);
+    }
+
+    // ADMIN - Réordonner les photos principales
+    public Property reorderMainPhotos(String propertyId, List<String> urls) {
+        Property property = getPropertyById(propertyId);
+        property.setMainPhotoUrls(new ArrayList<>(urls));
+        return updateProperty(propertyId, property);
+    }
 }

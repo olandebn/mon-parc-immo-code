@@ -27,20 +27,10 @@ import AdminExpenses from './pages/admin/AdminExpenses'
 import AdminMessages from './pages/admin/AdminMessages'
 import AdminUsers from './pages/admin/AdminUsers'
 
-// Redirige selon le rôle dès qu'on est connecté
+// Affiche la homepage pour tout le monde.
+// Les admins sont redirigés vers /admin uniquement après la connexion (dans LoginPage),
+// pas à chaque visite de "/" — pour qu'ils puissent revenir à l'accueil librement.
 function SmartHome() {
-  const { currentUser, isAdmin, loading } = useAuth()
-
-  // AuthProvider bloque le rendu tant que loading est true,
-  // donc ce cas ne devrait pas arriver — sécurité supplémentaire
-  if (loading) return null
-
-  // Seul le gérant est redirigé vers son dashboard —
-  // un voyageur connecté peut tout à fait voir la page d'accueil
-  if (currentUser && isAdmin) {
-    return <Navigate to="/admin" replace />
-  }
-
   return <HomePage />
 }
 

@@ -25,11 +25,22 @@ public class Property {
     private List<Room> rooms;
 
     // Infos pratiques
+    private String wifiName;
     private String wifiPassword;
     private String electricMeterLocation;
     private String waterMeterLocation;
     private String parkingInfo;
     private String trashInfo;
+
+    // Accueil / départ
+    private String checkInTime;
+    private String checkOutTime;
+    private String checkInInstructions;
+    private String checkOutInstructions;
+
+    // Règles & contenu
+    private String houseRules;
+    private String additionalNotes;
 
     // Coordonnées GPS (pour afficher sur carte)
     private double latitude;
