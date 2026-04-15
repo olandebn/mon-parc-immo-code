@@ -69,8 +69,14 @@ public class ReservationService {
             reservation.setId(ref.getId());
             ref.set(reservation).get();
 
-            emailService.sendNewReservationNotification(reservation);
-            emailService.sendReservationConfirmationToClient(reservation);
+            // Envoi des emails — en try/catch séparé pour ne pas bloquer la réservation
+            try {
+                emailService.sendNewReservationNotification(reservation);
+                emailService.sendReservationConfirmationToClient(reservation);
+            } catch (Exception emailEx) {
+                // Email non configuré ou erreur SMTP — on log sans faire échouer la réservation
+                System.err.println("[MonParcImmo] Email non envoyé (config manquante ?) : " + emailEx.getMessage());
+            }
 
             return reservation;
         } catch (InterruptedException | ExecutionException e) {
@@ -139,7 +145,11 @@ public class ReservationService {
             DocumentReference ref = firestore.collection(COLLECTION).document(id);
             ref.update("status", "CONFIRMED", "updatedAt", LocalDateTime.now()).get();
             Reservation reservation = ref.get().get().toObject(Reservation.class);
-            emailService.sendReservationStatusUpdate(reservation, "CONFIRMED");
+            try {
+                emailService.sendReservationStatusUpdate(reservation, "CONFIRMED");
+            } catch (Exception emailEx) {
+                System.err.println("[MonParcImmo] Email confirmation non envoyé : " + emailEx.getMessage());
+            }
             return reservation;
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException("Erreur", e);

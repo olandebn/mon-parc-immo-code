@@ -9,6 +9,7 @@ import PropertyPage from './pages/PropertyPage'
 import LoginPage from './pages/LoginPage'
 import InvitationPage from './pages/InvitationPage'
 import SetupAdminPage from './pages/SetupAdminPage'
+import NotFoundPage from './pages/NotFoundPage'
 
 // Pages client (authentifié)
 import BookingPage from './pages/BookingPage'
@@ -26,6 +27,8 @@ import AdminStats from './pages/admin/AdminStats'
 import AdminExpenses from './pages/admin/AdminExpenses'
 import AdminMessages from './pages/admin/AdminMessages'
 import AdminUsers from './pages/admin/AdminUsers'
+import AdminFinances from './pages/admin/AdminFinances'
+import AdminCleaning from './pages/admin/AdminCleaning'
 
 // Affiche la homepage pour tout le monde.
 // Les admins sont redirigés vers /admin uniquement après la connexion (dans LoginPage),
@@ -118,12 +121,22 @@ function App() {
               <AdminUsers />
             </ProtectedRoute>
           } />
+          <Route path="/admin/finances" element={
+            <ProtectedRoute requireAdmin>
+              <AdminFinances />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/menages" element={
+            <ProtectedRoute requireAdmin>
+              <AdminCleaning />
+            </ProtectedRoute>
+          } />
 
           {/* Setup — passer son compte en mode Gérant */}
           <Route path="/setup" element={<SetupAdminPage />} />
 
-          {/* Redirection par défaut */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* Page 404 */}
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </AuthProvider>
     </Router>

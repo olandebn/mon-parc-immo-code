@@ -100,6 +100,26 @@ public class EmailService {
         mailSender.send(message);
     }
 
+    // Rappel J-3 avant arrivée (envoyé au voyageur)
+    public void sendArrivalReminder(Reservation reservation, String checkInInstructions, String wifiPassword) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromEmail);
+        message.setTo(reservation.getClientEmail());
+        message.setSubject("[MonParcImmo] Votre arrivée dans 3 jours !");
+        String body = "Bonjour " + reservation.getClientName() + ",\n\n"
+            + "Votre séjour approche ! Voici un rappel pour votre arrivée le " + reservation.getCheckInDate() + ".\n\n";
+        if (checkInInstructions != null && !checkInInstructions.isBlank()) {
+            body += "📋 Instructions d'arrivée :\n" + checkInInstructions + "\n\n";
+        }
+        if (wifiPassword != null && !wifiPassword.isBlank()) {
+            body += "📶 Wi-Fi : " + wifiPassword + "\n\n";
+        }
+        body += "Voir le guide complet du logement : " + frontendUrl + "/instructions\n\n"
+            + "À très bientôt,\nL'équipe MonParcImmo";
+        message.setText(body);
+        mailSender.send(message);
+    }
+
     // Notifier d'un nouveau message
     public void sendNewMessageNotification(String toEmail, String toName,
                                            String senderName, String reservationId) {

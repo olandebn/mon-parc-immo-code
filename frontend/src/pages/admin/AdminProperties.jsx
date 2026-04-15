@@ -4,9 +4,10 @@ import { propertyService } from '../../services/api'
 import {
   Plus, Edit2, Trash2, Home, MapPin, Users, Maximize2,
   X, ChevronRight, Image, Eye, Wifi, Clock, BookOpen,
-  Info, Camera, GripVertical, CheckCircle, ExternalLink
+  Info, Camera, GripVertical, CheckCircle, ExternalLink, Link2
 } from 'lucide-react'
 import { toast } from 'react-toastify'
+import PhotoUploader from '../../components/admin/PhotoUploader'
 
 /* ── CSS ──────────────────────────────────────────────────────────────────── */
 const CSS = `
@@ -523,120 +524,114 @@ function PropertyForm({
               {/* Photos principales */}
               <div className="prp-section">
                 <p className="prp-section-title"><Camera size={13} /> Photos principales</p>
-                <p style={{ fontSize: 12, color: '#64748b', marginBottom: 16 }}>La première photo sera affichée en couverture. Cliquez sur ⭐ pour mettre une photo en avant.</p>
-                <div className="prp-photo-grid">
-                  {mainPhotos.map((url, i) => (
-                    <div key={url} className="prp-photo-item">
-                      <img src={url} alt={`Photo ${i + 1}`}
-                        onError={e => { e.currentTarget.style.display = 'none' }} />
-                      {i === 0 && <span className="prp-photo-cover">⭐ Couverture</span>}
-                      <div style={{ position: 'absolute', top: 6, left: 6, display: 'flex', gap: 4 }}>
+                <p style={{ fontSize: 12, color: '#64748b', marginBottom: 16 }}>
+                  La première photo sera la couverture. Cliquez sur ⭐ pour la mettre en avant.
+                </p>
+
+                {/* Galerie existante */}
+                {mainPhotos.length > 0 && (
+                  <div className="prp-photo-grid" style={{ marginBottom: 16 }}>
+                    {mainPhotos.map((url, i) => (
+                      <div key={url} className="prp-photo-item">
+                        <img src={url} alt={`Photo ${i + 1}`} onError={e => { e.currentTarget.style.display = 'none' }} />
+                        {i === 0 && <span className="prp-photo-cover">⭐ Couverture</span>}
                         {i > 0 && (
                           <button type="button" onClick={() => handleMoveFirst(url)}
-                            style={{ background: 'rgba(0,0,0,0.7)', border: 'none', borderRadius: 6, color: '#e0a84f', fontSize: 12, padding: '3px 7px', cursor: 'pointer' }}
-                            title="Mettre en couverture">⭐</button>
+                            style={{ position: 'absolute', top: 6, left: 6, background: 'rgba(0,0,0,0.75)', border: 'none', borderRadius: 6, color: '#e0a84f', fontSize: 12, padding: '3px 7px', cursor: 'pointer' }}>
+                            ⭐
+                          </button>
                         )}
+                        <button type="button" className="prp-photo-del" onClick={() => handleRemoveMainPhoto(url)}>✕</button>
                       </div>
-                      <button type="button" className="prp-photo-del" onClick={() => handleRemoveMainPhoto(url)}>✕</button>
-                    </div>
-                  ))}
-                  {/* Bouton ajouter */}
-                  {(!addingPhoto || newPhotoType !== 'main') && (
-                    <div className="prp-photo-add" onClick={() => { setNewPhotoType('main'); setAddingPhoto(true); setNewPhotoUrl(''); setPhotoPreviewOk(false) }}>
-                      <Plus size={22} />
-                      <span style={{ fontSize: 12, fontWeight: 600 }}>Ajouter</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Champ URL photo principale */}
-                {addingPhoto && newPhotoType === 'main' && (
-                  <div style={{ marginTop: 16, padding: 16, background: 'rgba(255,255,255,0.04)', borderRadius: 12, border: '1px solid rgba(201,136,58,0.2)' }}>
-                    <label className="prp-label">URL de la photo</label>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <input
-                        className="prp-input" autoFocus
-                        value={newPhotoUrl}
-                        onChange={e => { setNewPhotoUrl(e.target.value); setPhotoPreviewOk(false) }}
-                        placeholder="https://example.com/photo.jpg"
-                      />
-                      <button type="button" onClick={handleAddPhoto} disabled={!photoPreviewOk} className="prp-btn-primary" style={{ whiteSpace: 'nowrap' }}>
-                        + Ajouter
-                      </button>
-                      <button type="button" onClick={() => { setAddingPhoto(false); setNewPhotoUrl('') }} className="prp-btn-ghost" style={{ padding: '9px 12px' }}>
-                        <X size={15} />
-                      </button>
-                    </div>
-                    {newPhotoUrl && (
-                      <img
-                        src={newPhotoUrl}
-                        className="prp-url-preview"
-                        alt="Aperçu"
-                        onLoad={() => setPhotoPreviewOk(true)}
-                        onError={() => setPhotoPreviewOk(false)}
-                        style={{ display: photoPreviewOk ? 'block' : 'none' }}
-                      />
-                    )}
-                    {newPhotoUrl && !photoPreviewOk && (
-                      <div className="prp-url-preview-placeholder">⚠️ URL invalide ou image inaccessible</div>
-                    )}
+                    ))}
                   </div>
                 )}
+
+                {/* Upload depuis le PC */}
+                <PhotoUploader
+                  folder={`properties/${editingProp?.id || 'new'}/main`}
+                  label="Ajouter des photos depuis votre PC"
+                  onUploaded={url => setMainPhotos(prev => [...prev, url])}
+                />
+
+                {/* OU par URL */}
+                <details style={{ marginTop: 12 }}>
+                  <summary style={{ fontSize: 12, color: '#64748b', cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Link2 size={12} /> Ou ajouter par URL
+                  </summary>
+                  <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
+                    <input
+                      className="prp-input"
+                      value={newPhotoType === 'main' ? newPhotoUrl : ''}
+                      onChange={e => { setNewPhotoType('main'); setNewPhotoUrl(e.target.value); setPhotoPreviewOk(false) }}
+                      placeholder="https://example.com/photo.jpg"
+                    />
+                    <button type="button" onClick={handleAddPhoto}
+                      disabled={!(newPhotoType === 'main' && photoPreviewOk)}
+                      className="prp-btn-primary" style={{ whiteSpace: 'nowrap' }}>
+                      + Ajouter
+                    </button>
+                  </div>
+                  {newPhotoType === 'main' && newPhotoUrl && (
+                    <>
+                      <img src={newPhotoUrl} className="prp-url-preview" alt="Aperçu"
+                        onLoad={() => setPhotoPreviewOk(true)} onError={() => setPhotoPreviewOk(false)}
+                        style={{ display: photoPreviewOk ? 'block' : 'none' }} />
+                      {!photoPreviewOk && <div className="prp-url-preview-placeholder">⚠️ URL invalide ou image inaccessible</div>}
+                    </>
+                  )}
+                </details>
               </div>
 
               {/* Photos des alentours */}
               <div className="prp-section">
                 <p className="prp-section-title"><Image size={13} /> Photos des environs</p>
                 <p style={{ fontSize: 12, color: '#64748b', marginBottom: 16 }}>Quartier, vue depuis le balcon, parking, façade…</p>
-                <div className="prp-photo-grid">
-                  {surrPhotos.map((url, i) => (
-                    <div key={url} className="prp-photo-item">
-                      <img src={url} alt={`Env. ${i + 1}`} onError={e => { e.currentTarget.style.display = 'none' }} />
-                      <button type="button" className="prp-photo-del" onClick={() => handleRemoveSurrPhoto(url)}>✕</button>
-                    </div>
-                  ))}
-                  {(!addingPhoto || newPhotoType !== 'surr') && (
-                    <div className="prp-photo-add" onClick={() => { setNewPhotoType('surr'); setAddingPhoto(true); setNewPhotoUrl(''); setPhotoPreviewOk(false) }}>
-                      <Plus size={22} />
-                      <span style={{ fontSize: 12, fontWeight: 600 }}>Ajouter</span>
-                    </div>
-                  )}
-                </div>
 
-                {addingPhoto && newPhotoType === 'surr' && (
-                  <div style={{ marginTop: 16, padding: 16, background: 'rgba(255,255,255,0.04)', borderRadius: 12, border: '1px solid rgba(201,136,58,0.2)' }}>
-                    <label className="prp-label">URL de la photo</label>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <input
-                        className="prp-input" autoFocus
-                        value={newPhotoUrl}
-                        onChange={e => { setNewPhotoUrl(e.target.value); setPhotoPreviewOk(false) }}
-                        placeholder="https://example.com/quartier.jpg"
-                      />
-                      <button type="button" onClick={handleAddPhoto} disabled={!photoPreviewOk} className="prp-btn-primary" style={{ whiteSpace: 'nowrap' }}>
-                        + Ajouter
-                      </button>
-                      <button type="button" onClick={() => { setAddingPhoto(false); setNewPhotoUrl('') }} className="prp-btn-ghost" style={{ padding: '9px 12px' }}>
-                        <X size={15} />
-                      </button>
-                    </div>
-                    {newPhotoUrl && (
+                {surrPhotos.length > 0 && (
+                  <div className="prp-photo-grid" style={{ marginBottom: 16 }}>
+                    {surrPhotos.map((url, i) => (
+                      <div key={url} className="prp-photo-item">
+                        <img src={url} alt={`Env. ${i + 1}`} onError={e => { e.currentTarget.style.display = 'none' }} />
+                        <button type="button" className="prp-photo-del" onClick={() => handleRemoveSurrPhoto(url)}>✕</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <PhotoUploader
+                  folder={`properties/${editingProp?.id || 'new'}/surrounding`}
+                  label="Ajouter des photos des environs"
+                  onUploaded={url => setSurrPhotos(prev => [...prev, url])}
+                />
+
+                <details style={{ marginTop: 12 }}>
+                  <summary style={{ fontSize: 12, color: '#64748b', cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Link2 size={12} /> Ou ajouter par URL
+                  </summary>
+                  <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
+                    <input
+                      className="prp-input"
+                      value={newPhotoType === 'surr' ? newPhotoUrl : ''}
+                      onChange={e => { setNewPhotoType('surr'); setNewPhotoUrl(e.target.value); setPhotoPreviewOk(false) }}
+                      placeholder="https://example.com/quartier.jpg"
+                    />
+                    <button type="button" onClick={handleAddPhoto}
+                      disabled={!(newPhotoType === 'surr' && photoPreviewOk)}
+                      className="prp-btn-primary" style={{ whiteSpace: 'nowrap' }}>
+                      + Ajouter
+                    </button>
+                  </div>
+                  {newPhotoType === 'surr' && newPhotoUrl && (
+                    <>
                       <img src={newPhotoUrl} className="prp-url-preview" alt="Aperçu"
                         onLoad={() => setPhotoPreviewOk(true)} onError={() => setPhotoPreviewOk(false)}
                         style={{ display: photoPreviewOk ? 'block' : 'none' }} />
-                    )}
-                    {newPhotoUrl && !photoPreviewOk && (
-                      <div className="prp-url-preview-placeholder">⚠️ URL invalide ou image inaccessible</div>
-                    )}
-                  </div>
-                )}
+                      {!photoPreviewOk && <div className="prp-url-preview-placeholder">⚠️ URL invalide ou image inaccessible</div>}
+                    </>
+                  )}
+                </details>
               </div>
-
-              {(mainPhotos.length === 0 && surrPhotos.length === 0) && (
-                <p style={{ textAlign: 'center', color: '#475569', fontSize: 13 }}>
-                  💡 Astuce : hébergez vos photos sur Imgur, Cloudinary ou Firebase Storage et collez l'URL ici.
-                </p>
-              )}
             </div>
           )}
 

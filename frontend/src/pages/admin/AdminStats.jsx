@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { statsService } from '../../services/api'
-import { TrendingUp, TrendingDown, Users, Calendar, Euro, Percent } from 'lucide-react'
+import { statsService, expenseService } from '../../services/api'
+import { TrendingUp, TrendingDown, Users, Calendar, Euro, Percent, Target, Download } from 'lucide-react'
 import PropertySelector from '../../components/admin/PropertySelector'
 
 /* ── CSS ──────────────────────────────────────────────────────────────────── */
@@ -81,6 +81,7 @@ export default function AdminStats() {
   const [financial, setFinancial] = useState(null)
   const [occupancy, setOccupancy] = useState(null)
   const [clientsHistory, setClientsHistory] = useState(null)
+  const [expenseSummary, setExpenseSummary] = useState(null)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => { injectCSS() }, [])
@@ -89,18 +90,20 @@ export default function AdminStats() {
   const loadStats = async () => {
     setLoading(true)
     try {
-      const [yearlyRes, monthlyRes, financialRes, occupancyRes, clientsRes] = await Promise.all([
+      const [yearlyRes, monthlyRes, financialRes, occupancyRes, clientsRes, expRes] = await Promise.all([
         statsService.getYearlyStats(propertyId, year),
         statsService.getBookingsPerMonth(propertyId, year),
         statsService.getFinancialSummary(propertyId, year),
         statsService.getOccupancyRate(propertyId, year),
         statsService.getClientsHistory(propertyId),
+        expenseService.getExpenseSummary(propertyId, year).catch(() => ({ data: null })),
       ])
       setYearly(yearlyRes.data)
       setMonthly(monthlyRes.data)
       setFinancial(financialRes.data)
       setOccupancy(occupancyRes.data)
       setClientsHistory(clientsRes.data)
+      setExpenseSummary(expRes.data)
     } catch (error) {
       console.error(error)
     } finally {
@@ -150,7 +153,7 @@ export default function AdminStats() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
             {/* ── KPIs ── */}
-            <div className="sta-fadein" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+            <div className="sta-fadein sta-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
               {[
                 { icon: Calendar,   label: 'Réservations',  val: yearly?.totalReservations || 0,           color: '#f5f0ea' },
                 { icon: TrendingUp, label: 'Revenus bruts', val: `${yearly?.totalRevenue?.toFixed(0) || 0} €`, color: '#4ade80' },
@@ -166,6 +169,65 @@ export default function AdminStats() {
                 </div>
               ))}
             </div>
+
+            {/* ── Rentabilité ── */}
+            {yearly && expenseSummary && (() => {
+              const revenus    = yearly.totalRevenue || 0
+              const depenses   = expenseSummary.totalExpenses || 0
+              const benefice   = revenus - depenses
+              const ratio      = revenus > 0 ? (benefice / revenus) * 100 : 0
+              const isPositive = benefice >= 0
+              return (
+                <div className="sta-card sta-fadein" style={{ animationDelay: '0.05s', border: isPositive ? '1px solid rgba(74,222,128,0.2)' : '1px solid rgba(239,68,68,0.2)' }}>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: '#c9883a', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 20 }}>
+                    ✦ Rentabilité {year}
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginBottom: 24 }}>
+                    <div>
+                      <p style={{ fontSize: 11, color: '#64748b', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Revenus bruts</p>
+                      <p style={{ fontSize: 26, fontWeight: 900, color: '#4ade80', letterSpacing: '-0.04em' }}>{revenus.toFixed(0)} €</p>
+                    </div>
+                    <div>
+                      <p style={{ fontSize: 11, color: '#64748b', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Charges & dépenses</p>
+                      <p style={{ fontSize: 26, fontWeight: 900, color: '#f87171', letterSpacing: '-0.04em' }}>−{depenses.toFixed(0)} €</p>
+                    </div>
+                    <div>
+                      <p style={{ fontSize: 11, color: '#64748b', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Bénéfice net</p>
+                      <p style={{ fontSize: 26, fontWeight: 900, color: isPositive ? '#e0a84f' : '#f87171', letterSpacing: '-0.04em' }}>
+                        {isPositive ? '+' : ''}{benefice.toFixed(0)} €
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Barre visuelle revenus vs dépenses */}
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#64748b', marginBottom: 6 }}>
+                      <span>Revenus</span>
+                      <span>Dépenses</span>
+                    </div>
+                    <div style={{ height: 10, background: 'rgba(255,255,255,0.06)', borderRadius: 99, overflow: 'hidden', position: 'relative' }}>
+                      <div style={{ height: '100%', width: `${Math.min(100, revenus > 0 ? (revenus / Math.max(revenus, depenses)) * 100 : 0)}%`, background: 'linear-gradient(90deg, #4ade80, #22c55e)', borderRadius: 99 }} />
+                    </div>
+                    <div style={{ height: 10, background: 'rgba(255,255,255,0.06)', borderRadius: 99, overflow: 'hidden', marginTop: 4 }}>
+                      <div style={{ height: '100%', width: `${Math.min(100, revenus > 0 ? (depenses / Math.max(revenus, depenses)) * 100 : 0)}%`, background: 'linear-gradient(90deg, #f87171, #ef4444)', borderRadius: 99 }} />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Target size={14} style={{ color: '#64748b' }} />
+                      <span style={{ fontSize: 13, color: '#64748b' }}>Marge nette</span>
+                      <span style={{ fontSize: 15, fontWeight: 800, color: isPositive ? '#4ade80' : '#f87171' }}>
+                        {ratio.toFixed(1)}%
+                      </span>
+                    </div>
+                    <span style={{ fontSize: 12, color: isPositive ? '#4ade80' : '#f87171', fontWeight: 600 }}>
+                      {isPositive ? '✓ Rentable' : '⚠ Déficitaire'} sur {year}
+                    </span>
+                  </div>
+                </div>
+              )
+            })()}
 
             {/* ── Graphique réservations / mois ── */}
             {monthly && (

@@ -1,0 +1,97 @@
+/* ── Reset & base ──────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #080706;
+  color: #f5f0ea;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(201,136,58,0.3); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(201,136,58,0.55); }
+
+/* ── Sélection texte ───────────────────────────────────────────────────────── */
+::selection { background: rgba(201,136,58,0.3); color: #f5f0ea; }
+
+/* ── Responsive global ─────────────────────────────────────────────────────── */
+
+/* Grilles 4 colonnes → 2 colonnes sur tablette, 1 colonne sur mobile */
+@media (max-width: 900px) {
+  [data-grid="4"] { grid-template-columns: repeat(2, 1fr) !important; }
+}
+@media (max-width: 540px) {
+  [data-grid="4"] { grid-template-columns: 1fr !important; }
+  [data-grid="3"] { grid-template-columns: 1fr !important; }
+  [data-grid="2"] { grid-template-columns: 1fr !important; }
+}
+
+/* Admin dashboard mobile */
+@media (max-width: 768px) {
+  /* Stats 4 colonnes → 2 colonnes */
+  .adm-root .adm-stat-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  /* Modules 4 col → 2 col */
+  .adm-root .adm-modules-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  /* Header admin */
+  .adm-header-content { flex-wrap: wrap; gap: 8px; }
+}
+
+@media (max-width: 480px) {
+  .adm-root .adm-stat-grid { grid-template-columns: 1fr 1fr !important; }
+  .adm-root .adm-modules-grid { grid-template-columns: 1fr 1fr !important; }
+}
+
+/* Pages admin header sur mobile */
+@media (max-width: 640px) {
+  .prp-header > div,
+  .exp-header > div,
+  .sta-header > div,
+  .bkg-header > div,
+  .prc-header > div,
+  .doc-header > div,
+  .usr-header > div,
+  .msg-header > div {
+    flex-wrap: wrap !important;
+    height: auto !important;
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
+    gap: 10px !important;
+  }
+}
+
+/* Photos grid responsive */
+@media (max-width: 640px) {
+  .prp-photo-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+/* Formulaires en grille 2 col → 1 col sur mobile */
+@media (max-width: 600px) {
+  .prp-form-card [style*="grid-template-columns: 1fr 1fr"],
+  .prp-form-card [style*="gridTemplateColumns: '1fr 1fr'"],
+  .exp-form-card [style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Navbar mobile */
+@media (max-width: 640px) {
+  nav { flex-wrap: wrap; }
+}
+
+/* Tableau de bord calendrier mobile */
+@media (max-width: 640px) {
+  .adm-cal-day-name { font-size: 8px !important; padding: 2px 0 4px !important; }
+  .adm-cal-cell { font-size: 11px !important; border-radius: 6px !important; }
+}
+
+/* Bien card mobile */
+@media (max-width: 640px) {
+  .prp-bien-card { flex-direction: column !important; }
+  .prp-bien-card > div:first-child { width: 100% !important; height: 180px !important; }
+}

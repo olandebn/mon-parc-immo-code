@@ -1,9 +1,91 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { expenseService } from '../../services/api'
-import { Plus, Edit2, Trash2, Filter } from 'lucide-react'
+import { Plus, Edit2, Trash2, Filter, Download, Printer } from 'lucide-react'
 import { toast } from 'react-toastify'
 import PropertySelector from '../../components/admin/PropertySelector'
+
+/* ── Helpers export ──────────────────────────────────────────────────────── */
+function exportCSV(expenses, year, propertyName) {
+  const CATS = {
+    RENOVATION: 'Travaux / Rénovation', FURNITURE: 'Meubles / Équipements',
+    TAXES: 'Impôts / Taxes', WATER_ELECTRICITY: 'Eau + Électricité',
+    SYNDICATE_CHARGES: 'Charges de syndic', INSURANCE: 'Assurance', OTHER: 'Autre',
+  }
+  const FREQS = { ONE_TIME: 'Ponctuelle', MONTHLY: 'Mensuelle', ANNUAL: 'Annuelle' }
+
+  const header = ['Date', 'Catégorie', 'Description', 'Fréquence', 'Montant (€)', 'Notes']
+  const rows = expenses.map(e => [
+    e.date || '',
+    CATS[e.category] || e.category,
+    e.label || '',
+    FREQS[e.frequency] || e.frequency,
+    (e.amount || 0).toFixed(2),
+    e.notes || '',
+  ])
+
+  const total = expenses.reduce((s, e) => s + (e.amount || 0), 0)
+  rows.push([]) // ligne vide
+  rows.push(['', '', '', 'TOTAL', total.toFixed(2), ''])
+
+  const csv = [header, ...rows]
+    .map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(';'))
+    .join('\n')
+
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `depenses_${propertyName || 'bien'}_${year}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+function printPDF(expenses, year, propertyName, summary) {
+  const CATS = {
+    RENOVATION: '🔨 Travaux', FURNITURE: '🛋️ Meubles', TAXES: '📋 Impôts',
+    WATER_ELECTRICITY: '⚡ Eau + Électricité', SYNDICATE_CHARGES: '🏢 Syndic',
+    INSURANCE: '🛡️ Assurance', OTHER: '📦 Autre',
+  }
+  const total = expenses.reduce((s, e) => s + (e.amount || 0), 0)
+  const rows = expenses.map(e => `
+    <tr>
+      <td>${e.date || '—'}</td>
+      <td>${CATS[e.category] || e.category}</td>
+      <td>${e.label || '—'}</td>
+      <td>${e.notes || ''}</td>
+      <td style="text-align:right;font-weight:600;color:#c0392b">${(e.amount || 0).toFixed(2)} €</td>
+    </tr>`).join('')
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+    <title>Dépenses ${year} — ${propertyName}</title>
+    <style>
+      body { font-family: 'Helvetica Neue', sans-serif; color: #1a1a1a; padding: 32px; font-size: 13px; }
+      h1 { font-size: 22px; margin-bottom: 4px; }
+      .sub { color: #666; margin-bottom: 24px; }
+      table { width: 100%; border-collapse: collapse; }
+      th { background: #f4f4f4; padding: 8px 10px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
+      td { padding: 8px 10px; border-bottom: 1px solid #eee; }
+      .total-row td { background: #fafafa; font-weight: 700; border-top: 2px solid #ddd; }
+      .total-row td:last-child { color: #c0392b; font-size: 16px; }
+      @media print { body { padding: 0; } }
+    </style></head><body>
+    <h1>Charges & Dépenses — ${year}</h1>
+    <p class="sub">Bien : ${propertyName} &nbsp;|&nbsp; Total : <strong>${total.toFixed(2)} €</strong></p>
+    <table>
+      <thead><tr><th>Date</th><th>Catégorie</th><th>Description</th><th>Notes</th><th style="text-align:right">Montant</th></tr></thead>
+      <tbody>${rows}
+        <tr class="total-row"><td colspan="4">TOTAL</td><td style="text-align:right">${total.toFixed(2)} €</td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:32px;font-size:11px;color:#999">Exporté le ${new Date().toLocaleDateString('fr-FR')} depuis MonParcImmo</p>
+    </body></html>`
+
+  const win = window.open('', '_blank')
+  win.document.write(html)
+  win.document.close()
+  win.onload = () => win.print()
+}
 
 /* ── CSS ──────────────────────────────────────────────────────────────────── */
 const CSS = `
@@ -152,6 +234,7 @@ const emptyForm = {
 export default function AdminExpenses() {
   const currentYear = new Date().getFullYear()
   const [propertyId, setPropertyId] = useState(null)
+  const [propertyName, setPropertyName] = useState('')
   const [expenses, setExpenses] = useState([])
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -246,13 +329,29 @@ export default function AdminExpenses() {
             <span style={{ fontSize: 17, fontWeight: 800, letterSpacing: '-0.02em' }}>Charges & Dépenses</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-            <PropertySelector value={propertyId} onChange={(id) => setPropertyId(id)} required />
+            <PropertySelector value={propertyId} onChange={(id, prop) => { setPropertyId(id); setPropertyName(prop?.name || '') }} required />
             <select value={year} onChange={(e) => setYear(parseInt(e.target.value))}
               style={{ padding: '9px 14px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, fontSize: 13, color: '#f5f0ea', fontFamily: 'inherit', outline: 'none', cursor: 'pointer' }}>
               {[currentYear, currentYear - 1, currentYear - 2].map(y =>
                 <option key={y} value={y} style={{ background: '#1a1814' }}>{y}</option>
               )}
             </select>
+            {propertyId && expenses.length > 0 && (
+              <>
+                <button
+                  onClick={() => exportCSV(filtered, year, propertyName)}
+                  style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'9px 14px', background:'rgba(74,222,128,0.1)', border:'1px solid rgba(74,222,128,0.25)', borderRadius:10, color:'#4ade80', fontSize:13, fontWeight:600, cursor:'pointer' }}
+                >
+                  <Download size={14} /> Excel
+                </button>
+                <button
+                  onClick={() => printPDF(filtered, year, propertyName, summary)}
+                  style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'9px 14px', background:'rgba(96,165,250,0.1)', border:'1px solid rgba(96,165,250,0.25)', borderRadius:10, color:'#60a5fa', fontSize:13, fontWeight:600, cursor:'pointer' }}
+                >
+                  <Printer size={14} /> PDF
+                </button>
+              </>
+            )}
             {propertyId && (
               <button
                 onClick={() => { setForm({ ...emptyForm, year }); setEditingId(null); setShowForm(true) }}

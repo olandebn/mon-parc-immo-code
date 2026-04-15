@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import Navbar from '../components/common/Navbar'
 import { documentService, propertyService } from '../services/api'
 import { FileText, ExternalLink, Image, Zap, Droplets, Wifi } from 'lucide-react'
+import QRCodeGuide from '../components/common/QRCodeGuide'
 
 /* ── CSS ──────────────────────────────────────────────────────────────────── */
 const CSS = `
@@ -104,8 +105,13 @@ export default function InstructionsPage() {
         {/* ── En-tête ── */}
         <div className="guide-fadein" style={{ marginBottom: 36 }}>
           <p style={{ fontSize: 12, fontWeight: 700, color: '#c9883a', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>✦ Guide</p>
-          <h1 style={{ fontSize: 30, fontWeight: 900, letterSpacing: '-0.04em', marginBottom: 8 }}>Guide du logement</h1>
-          <p style={{ color: '#64748b', fontSize: 15 }}>Toutes les informations utiles pour votre séjour.</p>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+            <div>
+              <h1 style={{ fontSize: 30, fontWeight: 900, letterSpacing: '-0.04em', marginBottom: 8 }}>Guide du logement</h1>
+              <p style={{ color: '#64748b', fontSize: 15 }}>Toutes les informations utiles pour votre séjour.</p>
+            </div>
+            <QRCodeGuide />
+          </div>
         </div>
 
         {loading ? (
