@@ -1,10 +1,15 @@
 # ==============================
 # Fichiers sensibles - NE JAMAIS COMMITER
 # ==============================
-firebase-service-account.json
+*firebase-service-account*.json
+*service-account*.json
+*.key.json
 .env
 .env.local
 .env.production
+.env*.local
+secrets/
+credentials/
 
 # ==============================
 # Backend Java / Maven
