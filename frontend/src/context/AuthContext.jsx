@@ -39,6 +39,23 @@ export function AuthProvider({ children }) {
             // Mise en cache du rôle — résiste aux redémarrages / backend down
             localStorage.setItem(ROLE_KEY, profile?.role || 'CLIENT')
 
+            // ── Sync automatique des custom claims pour les comptes ADMIN existants ──
+            // Si le rôle Firestore est ADMIN mais le token ne l'indique pas encore,
+            // on appelle sync-claims puis on force un refresh du token.
+            if (admin) {
+              try {
+                const tokenResult = await firebaseUser.getIdTokenResult()
+                if (!tokenResult.claims.admin) {
+                  // Le claim manque → synchroniser côté backend puis rafraîchir le token
+                  await api.post('/users/me/sync-claims')
+                  const newToken = await firebaseUser.getIdToken(true)
+                  api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`
+                }
+              } catch (syncErr) {
+                console.warn('Sync claims échoué (ignoré) :', syncErr?.message)
+              }
+            }
+
           } catch {
             // ── 2. Backend down ou profil inexistant → on utilise le cache ──
             const cached = localStorage.getItem(ROLE_KEY)
@@ -105,6 +122,17 @@ export function AuthProvider({ children }) {
   // Passer son propre compte en mode Gérant (ADMIN)
   const becomeAdmin = async () => {
     await api.post('/users/me/become-admin')
+
+    // Forcer un refresh du token Firebase pour inclure le nouveau custom claim admin:true
+    if (currentUser) {
+      try {
+        const newToken = await currentUser.getIdToken(true)
+        api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`
+      } catch (e) {
+        console.warn('Refresh token après becomeAdmin échoué :', e?.message)
+      }
+    }
+
     setIsAdmin(true)
     localStorage.setItem(ROLE_KEY, 'ADMIN')
     setUserProfile(prev => prev ? { ...prev, role: 'ADMIN' } : prev)

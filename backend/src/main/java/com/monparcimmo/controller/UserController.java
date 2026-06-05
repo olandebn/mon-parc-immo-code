@@ -1,8 +1,11 @@
 package com.monparcimmo.controller;
 
+import com.google.firebase.auth.FirebaseAuth;
 import com.monparcimmo.model.Invitation;
 import com.monparcimmo.model.User;
 import com.monparcimmo.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,6 +18,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api")
 public class UserController {
+
+    private static final Logger log = LoggerFactory.getLogger(UserController.class);
 
     @Autowired
     private UserService userService;
@@ -61,7 +66,19 @@ public class UserController {
         user.setRole(role);
         user.setActive(true);
 
-        return ResponseEntity.ok(userService.createUser(user));
+        User created = userService.createUser(user);
+
+        // Si ADMIN, positionner le custom claim Firebase pour que Spring Security l'honore
+        if ("ADMIN".equals(role)) {
+            try {
+                FirebaseAuth.getInstance().setCustomUserClaims(uid, Map.of("admin", true));
+                log.info("Custom claim 'admin' positionné pour uid={}", uid);
+            } catch (Exception e) {
+                log.warn("Impossible de positionner le custom claim admin pour uid={} : {}", uid, e.getMessage());
+            }
+        }
+
+        return ResponseEntity.ok(created);
     }
 
     // AUTHENTIFIÉ - Récupérer son profil
@@ -84,10 +101,39 @@ public class UserController {
     @PostMapping("/users/me/become-admin")
     public ResponseEntity<User> becomeAdmin(Authentication auth) {
         String uid = (String) auth.getPrincipal();
+
+        // 1. Positionner le custom claim Firebase (nécessaire pour Spring Security)
+        try {
+            FirebaseAuth.getInstance().setCustomUserClaims(uid, Map.of("admin", true));
+            log.info("Custom claim 'admin' positionné pour uid={}", uid);
+        } catch (Exception e) {
+            log.warn("Impossible de positionner le custom claim admin pour uid={} : {}", uid, e.getMessage());
+        }
+
+        // 2. Mettre à jour le rôle dans Firestore
         User user = userService.getUserByUid(uid);
         user.setRole("ADMIN");
         User updated = userService.updateUser(uid, user);
         return ResponseEntity.ok(updated);
+    }
+
+    // AUTHENTIFIÉ - Synchroniser les custom claims Firebase avec le rôle Firestore
+    // (utile pour les comptes existants créés avant la gestion des claims)
+    @PostMapping("/users/me/sync-claims")
+    public ResponseEntity<Map<String, String>> syncClaims(Authentication auth) {
+        String uid = (String) auth.getPrincipal();
+        try {
+            User user = userService.getUserByUid(uid);
+            if ("ADMIN".equals(user.getRole())) {
+                FirebaseAuth.getInstance().setCustomUserClaims(uid, Map.of("admin", true));
+                log.info("Claims synchronisés pour uid={} → admin=true", uid);
+                return ResponseEntity.ok(Map.of("status", "synced", "role", "ADMIN"));
+            }
+            return ResponseEntity.ok(Map.of("status", "ok", "role", user.getRole()));
+        } catch (Exception e) {
+            log.warn("Erreur sync claims uid={} : {}", uid, e.getMessage());
+            return ResponseEntity.ok(Map.of("status", "error", "message", e.getMessage()));
+        }
     }
 
     // ADMIN - Lister tous les clients
